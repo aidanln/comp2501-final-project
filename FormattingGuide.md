@@ -24,7 +24,6 @@
 
 ### Naming Conventions
 * Functions must use Pascal Case (e.g. `MyFunction()`)
-* Member variables must use Snake Case with an underscore at the end (e.g. `member_var_`)
 * Constants use Snake Case in caps (e.g. `CONSTANT_VAR`)
-* Standard variables must use Snake Case (e.g. `temp_var`)
+* Standard variables must use Snake Case, may have a underscore at the end (e.g. `temp_var`, `member_var_`)
 
