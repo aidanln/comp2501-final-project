@@ -19,6 +19,7 @@
 * Keep spaces between operators, unless its a very small equation (e.g. `++i`, `i+1`)
 * Opening curly brackets must be kept on the same line with one space, do not use a newline
 * When passing by reference or by pointer, place the symbol after the data type (e.g. `obj& foo`, `obj* bar`)
+* Define static member variables in their `.cc` file
 
 ### Naming Conventions
 * Functions must use Pascal Case (e.g. `MyFunction()`)
