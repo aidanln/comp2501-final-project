@@ -8,7 +8,6 @@
 
 ### Documentation
 * Place a comment at the top of each file with a brief explanation of it's purpose
-* If necessary, place detailed function/variable comments in the `.h` file, only brief comments allowed in the `.cc` files
 * Function prototypes should have their parameters named appropriately in the `.h` file
 * The order in which functions are declared in the `.h` file should be the same as the order they are defined in the `.cc` file
 
