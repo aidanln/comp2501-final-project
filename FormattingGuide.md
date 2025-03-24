@@ -10,6 +10,7 @@
 * Place a comment at the top of each file with a brief explanation of it's purpose
 * Place a comment surrounded by `/*** comment ***/` above each function definition with an explanation of what it does
 * Space function definitions out by two newlines
+* Functions with one line definitions may be defined in the header file with 'inline'
 * Function prototypes should have their parameters named appropriately in the `.h` file
 * The order in which functions are declared in the `.h` file should be the same as the order they are defined in the `.cc` file
 
