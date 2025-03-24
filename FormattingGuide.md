@@ -25,4 +25,5 @@
 * Functions must use Pascal Case (e.g. `MyFunction()`)
 * Constants use Snake Case in caps (e.g. `CONSTANT_VAR`)
 * Standard variables must use Snake Case, may have a underscore at the end (e.g. `temp_var`, `member_var_`)
+* File names must use Snake Case (e.g. `game_object.cc`)
 
