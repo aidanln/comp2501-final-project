@@ -3,7 +3,7 @@
 ### File Structure and Access
 * Place constants in the defs.h file to keep them organized
 * Try to keep library and file include statements in the appropriate `.h` file
-* Keep member variables private, member functions may have any access specifier
+* Keep member variables private, can be protected if inherited, member functions may have any access specifier
 
 ### Documentation
 * Place a comment at the top of each file with a brief explanation of it's purpose
