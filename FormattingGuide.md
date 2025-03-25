@@ -2,7 +2,6 @@
 
 ### File Structure and Access
 * Place constants in the defs.h file to keep them organized
-* Each class must have a corresponding `.h` and `.cc` file
 * Try to keep library and file include statements in the appropriate `.h` file
 * Keep member variables private, member functions may have any access specifier
 
