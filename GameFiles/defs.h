@@ -1,0 +1,47 @@
+#ifndef DEFS_H_
+#define DEFS_H_
+
+		/*** External Constants ***/
+
+// Toggle to have memory leaks printed on program exit
+const bool PRINT_MEMORY_LEAKS = false;
+
+// Macro for printing exceptions
+#define PrintException(exception_object)\
+    std::cerr << exception_object.what() << std::endl
+
+
+namespace game {
+
+		/*** Game Specific Constants ***/
+	
+	// How zoomed in the game should be
+	const float CAMERA_ZOOM = 0.28f;
+
+	// Spawn-Related Flags and Timers
+	const bool RANDOM_SPAWNING = true;
+	const float ENEMY_SPAWN_DELAY = 4.0f;
+	const float COLLECTIBLE_SPAWN_DELAY = 6.0f;
+
+	// Collision thresholds
+	const float COLLISION_DIST = 0.8f;
+	const float BULLET_RADIUS = 0.4f;
+
+	// Player related constants
+	const float ACCEL_FORCE = 15.0f;
+	const float MAX_SPEED = 3.5f;
+	const int STARTING_HP = 5;
+
+	// Enemy related constants
+	const float ENEMY_SPEED = 2.5f;
+	const float DETECTION_DIST = 2.8f;
+	const float ORBIT_RADIUS = 0.8f;
+
+	// Bullet related constnats
+	const float BULLET_SPEED = 18.0f;
+	const float BULLET_LIFESPAN = 0.3f;
+	const float FIRING_COOLDOWN = 0.2f;
+
+}
+
+#endif
