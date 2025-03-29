@@ -19,7 +19,7 @@ namespace game {
         EnemyGameObject(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture);
 
         // Update function for moving the enemy object around
-        void Update(double delta_time) override;
+        virtual void Update(double delta_time) override;
 
         // Retrieve the players updated position
         void UpdateTarget(const glm::vec3& position);

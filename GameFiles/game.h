@@ -63,13 +63,11 @@ namespace game {
         
         // Enemy-Specific update helpers
         void EnemyCollisionCheck(EnemyGameObject* enemy);
+        void BulletCollisionCheck(EnemyGameObject* enemy, double delta_time);
         void ExplodeEnemy(EnemyGameObject* enemy);
 
         // Collectible-Specific helpers
         void CollectItem(CollectibleGameObject* collectible);
-
-        // Projectile-Specific helpers
-        void BulletCollisionCheck(ProjectileGameObject* bullet, double delta_time);
   
         // Spawning of game objects
         void SpawnEnemy(void);
@@ -131,7 +129,7 @@ namespace game {
 
         // Audio Variables
         audio_manager::AudioManager am;
-        int boom_sfx, bg_music, gameover_sfx, drinking_sfx;
+        int bg_music, game_start_sfx, boom_sfx, game_over_sfx, collect_sfx;
 
         // Flags
         bool update_flag;

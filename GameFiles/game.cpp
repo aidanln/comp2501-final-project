@@ -101,26 +101,31 @@ namespace game {
             am.SetListenerPosition(0.0, 0.0, 0.0);
 
             // Setup the background music (bg_music)
-            std::string filename = std::string(resources_directory_g).append("/audio/bgm_irotirot.wav");
+            std::string filename = std::string(resources_directory_g).append("/audio/bg_music.wav");
             bg_music = am.AddSound(filename.c_str());
             am.SetSoundPosition(bg_music, 0.0, 0.0, 0.0); // sound properties
             am.SetLoop(bg_music, true); // loop until program ends
             am.PlaySound(bg_music);
 
+            // Setup the game starting sound
+            filename = std::string(resources_directory_g).append("/audio/game_start.wav");
+            game_start_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(game_start_sfx, 0.0, 0.0, 0.0);
+
             // Setup the explosion sound
-            filename = std::string(resources_directory_g).append("/audio/explosion_sfx.wav");
+            filename = std::string(resources_directory_g).append("/audio/explosion.wav");
             boom_sfx = am.AddSound(filename.c_str());
-            am.SetSoundPosition(bg_music, 0.0, 0.0, 0.0);
+            am.SetSoundPosition(boom_sfx, 0.0, 0.0, 0.0);
 
             // Setup the game over sound
-            filename = std::string(resources_directory_g).append("/audio/game_over_sfx.wav");
-            gameover_sfx = am.AddSound(filename.c_str());
-            am.SetSoundPosition(bg_music, 0.0, 0.0, 0.0);
+            filename = std::string(resources_directory_g).append("/audio/game_over.wav");
+            game_over_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(game_over_sfx, 0.0, 0.0, 0.0);
 
-            // Setup the drinking sound, played when picking up a collectible
-            filename = std::string(resources_directory_g).append("/audio/drinking_sfx.wav");
-            drinking_sfx = am.AddSound(filename.c_str());
-            am.SetSoundPosition(bg_music, 0.0, 0.0, 0.0);
+            // Setup the collect sound
+            filename = std::string(resources_directory_g).append("/audio/collect.wav");
+            collect_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(collect_sfx, 0.0, 0.0, 0.0);
         }
 
         // Error handling
@@ -142,16 +147,14 @@ namespace game {
             tex_stars = 3,
             tex_explo = 4,
             tex_collectible = 5,
-            tex_invincible = 6,
-            tex_bullet = 7
+            tex_bullet = 6
         };
         textures.push_back("/textures/destroyer_red.png"); 
         textures.push_back("/textures/destroyer_green.png"); 
         textures.push_back("/textures/destroyer_blue.png");
-        textures.push_back("/textures/stars.png");
+        textures.push_back("/textures/background.png");
         textures.push_back("/textures/explosion.png");
         textures.push_back("/textures/collectible.png");
-        textures.push_back("/textures/destroyer_invincible.png");
         textures.push_back("/textures/bullet.png");
         LoadTextures(textures);
 
@@ -170,6 +173,9 @@ namespace game {
         // Setup background
         background = new GameObject(glm::vec3(0.0f, 0.0f, 0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(30.0f));
+
+        // Game Setup is done, indicate with the start-up sound
+        am.PlaySound(game_start_sfx);
     }
 
 
@@ -238,6 +244,11 @@ namespace game {
 
             // Push buffer drawn in the background onto the display
             glfwSwapBuffers(window_);
+
+            // Enforce FPS cap, temporary solution till I find a workaround for my laptop
+            while (1 / delta_time > FPS_CAP) {
+                delta_time = glfwGetTime() - last_time;
+            }
         }
     }
 
@@ -325,6 +336,7 @@ namespace game {
                 enemy_arr.erase(enemy_arr.begin() + i);
                 delete enemy;
             } else if (update_flag && !enemy->IsExploded()) {
+                BulletCollisionCheck(enemy, delta_time);
                 EnemyCollisionCheck(enemy);
             }
         }
@@ -338,9 +350,6 @@ namespace game {
             if (bullet->EraseTimerCheck()) {
                 projectile_arr.erase(projectile_arr.begin() + i);
                 delete bullet;
-            }
-            else if (!bullet->GetImpact()) {
-                BulletCollisionCheck(bullet, delta_time);
             }
         }
         
@@ -361,6 +370,8 @@ namespace game {
 
     /*** Check for collisions with the param enemy and update their state ***/
     void Game::EnemyCollisionCheck(EnemyGameObject* enemy) {
+
+        // handle an enemy running into the player
         if (CollisionCheck(player, enemy, COLLISION_DIST)) {
             ExplodeEnemy(enemy);
 
@@ -373,11 +384,13 @@ namespace game {
                 KillPlayer();
             }
         }
+
         // if the player is close enough to the enemy, enable chase state
         if (!enemy->GetState() && CollisionCheck(player, enemy, DETECTION_DIST)) {
             enemy->SetState(1);
             enemy->UpdateTarget(player->GetPosition());
         }
+
         // if the 2-second chase update timer is done, update the target position
         if (enemy->TargetUpdateCheck()) {
             enemy->UpdateTarget(player->GetPosition());
@@ -385,41 +398,13 @@ namespace game {
     }
 
 
-    /*** Explode an enemy game object ***/
-    void Game::ExplodeEnemy(EnemyGameObject* enemy) {
-        // replace destroyer sprite with an explosion, prepare for deletion via erase timer
-        enemy->Explode();
-        enemy->SetTexture(tex_[4]); // explosion texture
-        enemy->SetScale(glm::vec2(1.8f));
-        enemy->StartEraseTimer();
-
-        // play explosion sound
-        am.PlaySound(boom_sfx);
-    }
-
-
-    /*** Handle collecting a collectible ***/
-    void Game::CollectItem(CollectibleGameObject* collectible) {
-        player->IncrementCollectibleCount();
-        collectible->Collect();
-        am.PlaySound(drinking_sfx);
-    }
-
-
     /*** Check for ray-circle collision ***/
-    void Game::BulletCollisionCheck(ProjectileGameObject* bullet, double delta_time) {
-        /*
-        * NOTE REGARDING THIS FUNCTION:
-        * this is the second time iterating through the enemy array and there are WAY MORE
-        * calculations perfomed versus the standard circle-circle collision. Any performance
-        * issues are almost certainly caused by this method. I would like to refactor this, but
-        * oliver might have a boner for this method being in the game. I'll check soon.
-        */
+    void Game::BulletCollisionCheck(EnemyGameObject* enemy, double delta_time) {
 
-        // check against all enemies
-        for (int j = 0; j < enemy_arr.size(); j++) {
-            EnemyGameObject* enemy = enemy_arr[j];
-            if (!enemy->IsExploded()) {
+        // check against all non-impacted bullets
+        for (int i = 0; i < projectile_arr.size(); i++) {
+            if (!projectile_arr[i]->GetImpact()) {
+                ProjectileGameObject* bullet = projectile_arr[i];
 
                 // perform ray-circle check via quadratic formula re-arrange
                 glm::vec3 origin_to_center = bullet->GetOrigin() - enemy->GetPosition();
@@ -444,6 +429,28 @@ namespace game {
                 }
             }
         }
+    }
+
+
+    /*** Explode an enemy game object ***/
+    void Game::ExplodeEnemy(EnemyGameObject* enemy) {
+
+        // replace destroyer sprite with an explosion, prepare for deletion via erase timer
+        enemy->Explode();
+        enemy->SetTexture(tex_[4]); // explosion texture
+        enemy->SetScale(glm::vec2(1.8f));
+        enemy->StartEraseTimer();
+
+        // play explosion sound
+        am.PlaySound(boom_sfx);
+    }
+
+
+    /*** Handle collecting a collectible ***/
+    void Game::CollectItem(CollectibleGameObject* collectible) {
+        player->IncrementCollectibleCount();
+        collectible->Collect();
+        am.PlaySound(collect_sfx);
     }
 
 
@@ -527,7 +534,7 @@ namespace game {
         }
 
         // create the bullet object and add to collection
-        ProjectileGameObject* bullet = new ProjectileGameObject(player->GetPosition(), sprite_, &sprite_shader_, tex_[7]);
+        ProjectileGameObject* bullet = new ProjectileGameObject(player->GetPosition(), sprite_, &sprite_shader_, tex_[6]);
         projectile_arr.push_back(bullet);
         bullet->StartEraseTimer();
 
@@ -554,13 +561,18 @@ namespace game {
 
     /*** Handle the player explosion once health hits 0 ***/
     void Game::KillPlayer() {
+        // Player Specific
         player->SetTexture(tex_[4]);
         player->SetRotation(0);
         player->SetScale(glm::vec2(2.5f));
         player->StartEraseTimer();
+        if (!am.SoundIsPlaying(boom_sfx)) {
+            am.PlaySound(boom_sfx); // do not play if an explosion is already playing
+        }
+        // Game Specific
         close_window_timer.Start(6.0f);
         update_flag = false;
-        am.PlaySound(gameover_sfx);
+        am.PlaySound(game_over_sfx);
     }
 
 
@@ -605,6 +617,7 @@ namespace game {
         }
     
         glm::mat4 view_matrix = window_scale_matrix * camera_zoom_matrix * camera_trans_matrix;
+
 
         // Render all game objects
         player->Render(view_matrix, current_time_);
@@ -669,7 +682,9 @@ namespace game {
 
     /*** Print out the fps to the console (refactor later to display on-screen) ***/
     void Game::DisplayFPS(double dt) const {
-        std::cout << "Current Fps: " << std::floor(1/dt) << std::endl;
+        float fps = std::floor(1 / dt);
+        if (fps > FPS_CAP) { fps = FPS_CAP; }
+        std::cout << "Current Fps: " << fps << std::endl;
     }
 
 

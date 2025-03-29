@@ -18,6 +18,9 @@ namespace game {
 	// How zoomed in the game should be
 	const float CAMERA_ZOOM = 0.28f;
 
+	// FPS Cap so that my laptop doesn't sound like a jet engine trying to hit 500fps unnecesarily
+	const int FPS_CAP = 144;
+
 	// Spawn-Related Flags and Timers
 	const bool RANDOM_SPAWNING = true;
 	const float ENEMY_SPAWN_DELAY = 4.0f;
@@ -28,7 +31,7 @@ namespace game {
 	const float BULLET_RADIUS = 0.4f;
 
 	// Player related constants
-	const float ACCEL_FORCE = 15.0f;
+	const float ACCEL_FORCE = 20.0f;
 	const float MAX_SPEED = 3.5f;
 	const int STARTING_HP = 5;
 
