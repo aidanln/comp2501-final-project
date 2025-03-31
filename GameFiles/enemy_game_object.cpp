@@ -12,6 +12,9 @@ namespace game {
 		// initialize to default values
 		angle_ = 0;
 		exploded = false;
+		enemy_health = 1;
+		enemy_damage = 0;
+		target_pos = glm::vec3(0.0f);
 	}
 
 
@@ -23,20 +26,9 @@ namespace game {
 
 
 	/*** Updates the target for chase movement ***/
-	void EnemyGameObject::UpdateTarget(const glm::vec3& position) {
-		target_pos = position;
-
-		// calculate direction vector and distance to target
-		float x_dir = target_pos.x - position_.x;
-		float y_dir = target_pos.y - position_.y;
-		float distance = std::sqrt((x_dir * x_dir) + (y_dir * y_dir));
-
-		// avoid "divide by 0" errors
-		if (!(distance <= 0.0001f)) {
-			// set velocity vector as normalized direction vectors
-			velocity_.x = x_dir / distance;
-			velocity_.y = y_dir / distance;
-		}
+	void EnemyGameObject::UpdateTarget(GameObject* obj) {
+		target_pos = obj->GetPosition();
+		velocity_ = glm::normalize(target_pos - position_);
 	}
 
 } // namespace game

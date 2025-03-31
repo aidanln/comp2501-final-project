@@ -1,6 +1,8 @@
 // Definitions for every derived enemy object
 
 #include "derived_enemy_objects.h"
+#include "projectile_game_object.h"
+#include <iostream>
 
 namespace game {
 
@@ -12,6 +14,9 @@ namespace game {
 		: EnemyGameObject(position, geom, shader, texture), origin_pos(position) {
 		scale_ = glm::vec2(1.1f);
 		orbit_angle = 0;
+		enemy_health = 20;
+		enemy_damage = 40;
+		bullet_timer.Start(BULLET_TIMER);
 	}
 	void GunnerEnemy::Update(double delta_time) {
 		EnemyGameObject::Update(delta_time);
@@ -25,6 +30,15 @@ namespace game {
 		position_.y = origin_pos.y + ORBIT_RADIUS * sin(orbit_angle);
 	}
 
+	bool GunnerEnemy::IsFinished() {
+		if (bullet_timer.Finished()) {
+			bullet_timer.Start(BULLET_TIMER);
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
 
 	/*
 	* ChaserEnemy Definitions
@@ -32,6 +46,8 @@ namespace game {
 	ChaserEnemy::ChaserEnemy(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture)
 		: EnemyGameObject(position, geom, shader, texture) {
 		scale_ = glm::vec2(0.9f);
+		enemy_health = 10;
+		enemy_damage = 20;
 	}
 	void ChaserEnemy::Update(double delta_time) {
 		EnemyGameObject::Update(delta_time);
@@ -48,6 +64,9 @@ namespace game {
 	KamikazeEnemy::KamikazeEnemy(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture)
 		: EnemyGameObject(position, geom, shader, texture) {
 		scale_ = glm::vec2(0.6f);
+		enemy_health = 3;
+		enemy_damage = 30;
+		full_send = false;
 	}
 	void KamikazeEnemy::Update(double delta_time) {
 		EnemyGameObject::Update(delta_time);
@@ -55,6 +74,13 @@ namespace game {
 		// basic pursuit method
 		position_.x += velocity_.x * KAMIKAZE_SPEED * delta_time;
 		position_.y += velocity_.y * KAMIKAZE_SPEED * delta_time;
+	}
+
+	void KamikazeEnemy::UpdateTarget(GameObject* obj) {
+		// float distance = glm::length(target_pos - position_);
+		target_pos = obj->GetPosition() + obj->GetVelocity() * 1.5f;
+		velocity_ = glm::normalize(target_pos - position_);
+		full_send = false;
 	}
 
 } // namespace game

@@ -70,6 +70,9 @@ namespace game {
         void BulletCollisionCheck(EnemyGameObject* enemy, double delta_time);
         void ExplodeEnemy(EnemyGameObject* enemy);
 
+        // Player-specific collision detection
+        void PlayerBulletCollisionCheck(PlayerGameObject* player, double delta_time);
+
         // Collectible-Specific helpers
         void CollectItem(CollectibleGameObject* collectible);
   
@@ -77,6 +80,7 @@ namespace game {
         void SpawnEnemy(void);
         void SpawnCollectible(void);
         void SpawnBullet(void);
+        void SpawnGunnerBullet(GunnerEnemy* gunner);
 
         // Helper methods
         bool CollisionCheck(GameObject* obj_1, GameObject* obj_2, float dist);
@@ -98,7 +102,6 @@ namespace game {
         // Helper method for fps, needed for performance monitoring
         void DisplayFPS(double delta_time) const;
 
-
             /* MEMBER VARIABLES */
 
         // Main window: pointer to the GLFW window structure
@@ -115,6 +118,7 @@ namespace game {
         PlayerGameObject* player;
         std::vector<EnemyGameObject*> enemy_arr;
         std::vector<ProjectileGameObject*> projectile_arr;
+        std::vector<ProjectileGameObject*> gunner_projectile_arr;
         std::vector<CollectibleGameObject*> collectible_arr;
         GameObject* background;
 

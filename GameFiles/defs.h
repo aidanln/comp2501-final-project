@@ -33,7 +33,7 @@ namespace game {
 	// Player related constants
 	const float ACCEL_FORCE = 20.0f;
 	const float MAX_SPEED = 4.2f;
-	const unsigned short int STARTING_HP = 5;
+	const unsigned short int STARTING_HP = 100;
 
 	// Enemy related constants
 	const float GUNNER_SPEED = 1.5f;
@@ -41,11 +41,17 @@ namespace game {
 	const float ORBIT_SPEED = 4.0f;
 	const float CHASER_SPEED = 2.5f;
 	const float KAMIKAZE_SPEED = 4.0f;
+	const float KAMIKAZE_FULL_SEND = 2.0f;
 
-	// Bullet related constnats
+	// Bullet related constants
 	const float BULLET_SPEED = 18.0f;
+	const float GUNNER_BULLET_SPEED = 9.0f;
 	const float BULLET_LIFESPAN = 0.4f;
 	const float FIRING_COOLDOWN = 0.2f;
+
+	// Gunner related constants
+	const float BULLET_TIMER = 1.5f;
+	const unsigned short int GUNNER_BULLET_DAMAGE = 5;
 
 }
 

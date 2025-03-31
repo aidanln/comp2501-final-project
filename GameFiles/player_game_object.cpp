@@ -9,6 +9,7 @@ namespace game {
 		: GameObject(position, geom, shader, texture) {
 		// initialize default values
 		player_health = STARTING_HP;
+		player_damage = 2;
 		collectible_count = 0;
 		angle_ = 0;
 		target_angle = 0;
@@ -39,10 +40,14 @@ namespace game {
 
 
 	/*** Decrease health by 1 (provided it's above 0) ***/
-	void PlayerGameObject::DecrementHealth() {
+	void PlayerGameObject::TakeDamage(int damage) {
 		if (player_health > 0) {
-			player_health--;
+			player_health -= damage;
 		}
+		if (player_health < 0) {
+			player_health = 0;
+		}
+		std::cout << "Lost health! Player health is now " << player_health << "." << std::endl;
 	}
 
 } // namespace game
