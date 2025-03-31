@@ -24,7 +24,7 @@ namespace game {
 
         // Methods for handling health and collectible trackers
         inline void IncrementCollectibleCount(void) { collectible_count++; }
-        void DecrementHealth(void);
+        void TakeDamage(int damage);
 
         // Methods for handling cursor-based rotation
         inline void UpdateTargetAngle(float ta) { target_angle = ta; }
@@ -32,6 +32,9 @@ namespace game {
     private:
         // HP counter
         unsigned short int player_health;
+
+        // Damage
+        unsigned short int player_damage;
 
         // Tracks invincibility mode progress
         unsigned short int collectible_count;
