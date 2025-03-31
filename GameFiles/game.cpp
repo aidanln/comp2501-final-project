@@ -87,6 +87,7 @@ namespace game {
         semi_auto = true;
         holding_shoot = false;
         player_last_pos = glm::vec3(0.0f);
+        cursor_pos = glm::vec3(0.0f);
 
         // Audio Setup
         InitAudio();
@@ -105,7 +106,6 @@ namespace game {
             bg_music = am.AddSound(filename.c_str());
             am.SetSoundPosition(bg_music, 0.0, 0.0, 0.0); // sound properties
             am.SetLoop(bg_music, true); // loop until program ends
-            am.PlaySound(bg_music);
 
             // Setup the game starting sound
             filename = std::string(resources_directory_g).append("/audio/game_start.wav");
@@ -141,31 +141,34 @@ namespace game {
         // Declare and load textures
         std::vector<std::string> textures;
         enum {
-            tex_red_ship = 0,
-            tex_green_ship = 1,
-            tex_blue_ship = 2,
-            tex_stars = 3,
-            tex_explo = 4,
-            tex_collectible = 5,
-            tex_bullet = 6
+            tex_player = 0,
+            tex_gunner = 1,
+            tex_chaser = 2,
+            tex_kamikaze = 3,
+            tex_stars = 4,
+            tex_explosion = 5,
+            tex_collectible = 6,
+            tex_bullet = 7
         };
-        textures.push_back("/textures/destroyer_red.png"); 
-        textures.push_back("/textures/destroyer_green.png"); 
-        textures.push_back("/textures/destroyer_blue.png");
-        textures.push_back("/textures/background.png");
-        textures.push_back("/textures/explosion.png");
-        textures.push_back("/textures/collectible.png");
-        textures.push_back("/textures/bullet.png");
+        textures.push_back("/textures/player_ship.png");    // 0, tex_player
+        textures.push_back("/textures/gunner_ship.png");    // 1, tex_gunner
+        textures.push_back("/textures/chaser_ship.png");    // 2, tex_chaser
+        textures.push_back("/textures/kamikaze_ship.png");  // 3, tex_kamikaze
+        textures.push_back("/textures/background.png");     // 4, tex_stats
+        textures.push_back("/textures/explosion.png");      // 5, tex_explosion
+        textures.push_back("/textures/collectible.png");    // 6, tex_collectible
+        textures.push_back("/textures/bullet.png");         // 7, tex_bullet
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
-        player = new PlayerGameObject(glm::vec3(0.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_red_ship]);
+        player = new PlayerGameObject(glm::vec3(0.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_player]);
 
-        // Setup two starter enemies
-        enemy_arr.push_back(new EnemyGameObject(glm::vec3(-4.0f, -2.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_green_ship]));
-        enemy_arr.push_back(new EnemyGameObject(glm::vec3(4.0f, -2.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_blue_ship]));
+        // Setup starter enemies
+        enemy_arr.push_back(new GunnerEnemy(glm::vec3(-4.0f, -2.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_gunner]));
+        enemy_arr.push_back(new ChaserEnemy(glm::vec3(4.0f, -2.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_chaser]));
+        enemy_arr.push_back(new KamikazeEnemy(glm::vec3(0.0f, -4.5f, 0.0f), sprite_, &sprite_shader_, tex_[tex_kamikaze]));
 
-        // Setup three starter collectibles
+        // Setup starter collectibles
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(-2.0f, 2.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_collectible]));
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_collectible]));
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(2.0f, 2.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_collectible]));
@@ -176,6 +179,7 @@ namespace game {
 
         // Game Setup is done, indicate with the start-up sound
         am.PlaySound(game_start_sfx);
+        am.PlaySound(bg_music); // start bg music
     }
 
 
@@ -218,6 +222,9 @@ namespace game {
             // Update window events like input handling
             glfwPollEvents();
 
+            // Update the cursor position
+            GetCursorPosition();
+
             // Handle user input
             HandleControls(delta_time);
 
@@ -250,6 +257,47 @@ namespace game {
                 delta_time = glfwGetTime() - last_time;
             }
         }
+    }
+
+
+    /*** Get the coordinates of the mouse cursor in the gameworld ***/
+    void Game::GetCursorPosition(void) {
+
+        // initialize cursor position (relative to monitor) and window size
+        double mouse_x, mouse_y;
+        glfwGetCursorPos(window_, &mouse_x, &mouse_y);
+        int window_width, window_height;
+        glfwGetWindowSize(window_, &window_width, &window_height);
+
+        // bounds check, abort if the mouse is outside the window
+        if (mouse_x < 0 || mouse_x > window_width || mouse_y < 0 || mouse_y > window_height) {
+            return;
+        }
+
+        // cast width/height to float and initialize cursor position (relative to game world)
+        float width = static_cast<float>(window_width);
+        float height = static_cast<float>(window_height);
+        glm::vec3 temp_pos(0.0f);
+
+        // case 1: horizontal aspect ratio, case 2: vertical aspect ratio
+        if (width >= height) {
+            float aspect_ratio = width / height;
+            temp_pos.x = ((2.0f * mouse_x - width) * aspect_ratio) / (width * CAMERA_ZOOM);
+            temp_pos.y = (-2.0f * mouse_y + height) / (height * CAMERA_ZOOM);
+        }
+        else {
+            float aspect_ratio = height / width;
+            temp_pos.x = (2.0f * mouse_x - width) / (width * CAMERA_ZOOM);
+            temp_pos.y = ((-2.0f * mouse_y + height) * aspect_ratio) / (height * CAMERA_ZOOM);
+        }
+
+        // abort if the location is too close to the player
+        if (glm::length(temp_pos) < 0.02f) {
+            return;
+        }
+
+        // update the tracker variable
+        cursor_pos = temp_pos;
     }
 
 
@@ -319,6 +367,7 @@ namespace game {
 
         // Update the Player
         if (update_flag) {
+            player->UpdateTargetAngle(atan2(cursor_pos.y, cursor_pos.x) - (glm::pi<float>() / 2));
             player->Update(delta_time);
         }
         if (player->EraseTimerCheck()) {
@@ -330,12 +379,13 @@ namespace game {
         for (int i = 0; i < enemy_arr.size(); ++i) {
             EnemyGameObject* enemy = enemy_arr[i];
 
-            enemy->Update(delta_time);
-
             if (enemy->EraseTimerCheck()) {
                 enemy_arr.erase(enemy_arr.begin() + i);
                 delete enemy;
-            } else if (update_flag && !enemy->IsExploded()) {
+            }
+            else if (update_flag && !enemy->IsExploded()) {
+                enemy->UpdateTarget(player->GetPosition());
+                enemy->Update(delta_time);
                 BulletCollisionCheck(enemy, delta_time);
                 EnemyCollisionCheck(enemy);
             }
@@ -384,17 +434,6 @@ namespace game {
                 KillPlayer();
             }
         }
-
-        // if the player is close enough to the enemy, enable chase state
-        if (!enemy->GetState() && CollisionCheck(player, enemy, DETECTION_DIST)) {
-            enemy->SetState(1);
-            enemy->UpdateTarget(player->GetPosition());
-        }
-
-        // if the 2-second chase update timer is done, update the target position
-        if (enemy->TargetUpdateCheck()) {
-            enemy->UpdateTarget(player->GetPosition());
-        }
     }
 
 
@@ -437,7 +476,7 @@ namespace game {
 
         // replace destroyer sprite with an explosion, prepare for deletion via erase timer
         enemy->Explode();
-        enemy->SetTexture(tex_[4]); // explosion texture
+        enemy->SetTexture(tex_[5]); // explosion texture
         enemy->SetScale(glm::vec2(1.8f));
         enemy->StartEraseTimer();
 
@@ -464,15 +503,15 @@ namespace game {
         std::uniform_real_distribution<> dis_y(-4.0f, 4.0f);
 
         // generate the x and y coordinates, must be a certain distance from the player
-        // LOWKEY UNOPTIMAL THIS MAKES FRAME TIMES VERY RANDOM
+        // LOWKEY UNOPTIMAL THIS MAKES TTC VERY RANDOM
         glm::vec3 rand_pos(0.0f);
         while (glm::length(rand_pos) < 3.0f) {
             rand_pos.x = dis_x(gen);
             rand_pos.y = dis_y(gen);
         }
 
-        // add a new enemy at the random position
-        enemy_arr.push_back(new EnemyGameObject(rand_pos, sprite_, &sprite_shader_, tex_[1]));
+        // add a new enemy at the random position (ALWAYS GUNNER RN, CHANGE LATER)
+        enemy_arr.push_back(new GunnerEnemy(rand_pos, sprite_, &sprite_shader_, tex_[1]));
     }
 
 
@@ -494,59 +533,24 @@ namespace game {
         }
 
         // add a new collectible at the random position
-        collectible_arr.push_back(new CollectibleGameObject(rand_pos, sprite_, &sprite_shader_, tex_[5]));
+        collectible_arr.push_back(new CollectibleGameObject(rand_pos, sprite_, &sprite_shader_, tex_[6]));
     }
 
 
     /*** Spawn a bullet at the player's position with a velocity/rotation corresponding to the player's ***/
     void Game::SpawnBullet(void) {
 
-        // initialize cursor position (relative to monitor) and window size
-        double mouse_x, mouse_y;
-        glfwGetCursorPos(window_, &mouse_x, &mouse_y);
-        int window_width, window_height;
-        glfwGetWindowSize(window_, &window_width, &window_height);
-
-        // bounds check, abort if the mouse is outside the window
-        if (mouse_x < 0 || mouse_x > window_width || mouse_y < 0 || mouse_y > window_height) {
-            return;
-        }
-
-        // cast width/height to float and initialize cursor position (relative to game world)
-        float width = static_cast<float>(window_width);
-        float height = static_cast<float>(window_height);
-        glm::vec3 cursor_pos(0.0f);
-
-        // case 1: horizontal aspect ratio, case 2: vertical aspect ratio
-        if (width >= height) {
-            float aspect_ratio = width / height;
-            cursor_pos.x = ((2.0f * mouse_x - width) * aspect_ratio) / (width * CAMERA_ZOOM);
-            cursor_pos.y = (-2.0f * mouse_y + height) / (height * CAMERA_ZOOM);
-        } else {
-            float aspect_ratio = height / width;
-            cursor_pos.x = (2.0f * mouse_x - width) / (width * CAMERA_ZOOM);
-            cursor_pos.y = ((-2.0f * mouse_y + height) * aspect_ratio) / (height * CAMERA_ZOOM);
-        }
-
-        // abort if the location is too close to the player
-        if (glm::length(cursor_pos) < 0.02f) {
-            return;
-        }
-
         // create the bullet object and add to collection
-        ProjectileGameObject* bullet = new ProjectileGameObject(player->GetPosition(), sprite_, &sprite_shader_, tex_[6]);
+        ProjectileGameObject* bullet = new ProjectileGameObject(player->GetPosition(), sprite_, &sprite_shader_, tex_[7]);
         projectile_arr.push_back(bullet);
         bullet->StartEraseTimer();
 
         // set appropriate physical properties
         bullet->SetVelocity(glm::normalize(cursor_pos) * BULLET_SPEED);
-        bullet->SetRotation(
-            atan2(cursor_pos.y, cursor_pos.x) // angle from bearing
-            - (glm::pi<float>() / 2.0f) // fix orientation (pi/2 off)
-        );
+        bullet->SetRotation(atan2(cursor_pos.y, cursor_pos.x) - (glm::pi<float>() / 2));
 
-        // cool rotation thing, temporary until visuals are worked on
-        player->SetRotation(atan2(cursor_pos.y, cursor_pos.x));
+        // Ensures bullet comes out at the top of the player
+        player->SetRotation(atan2(cursor_pos.y, cursor_pos.x) - (glm::pi<float>() / 2));
 
         // debug msg
         std::cout << "clicked at (" << cursor_pos.x << ", " << cursor_pos.y << ")" << std::endl;
@@ -562,7 +566,7 @@ namespace game {
     /*** Handle the player explosion once health hits 0 ***/
     void Game::KillPlayer() {
         // Player Specific
-        player->SetTexture(tex_[4]);
+        player->SetTexture(tex_[5]); // explosion texture
         player->SetRotation(0);
         player->SetScale(glm::vec2(2.5f));
         player->StartEraseTimer();

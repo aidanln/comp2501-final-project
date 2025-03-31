@@ -26,12 +26,18 @@ namespace game {
         inline void IncrementCollectibleCount(void) { collectible_count++; }
         void DecrementHealth(void);
 
+        // Methods for handling cursor-based rotation
+        inline void UpdateTargetAngle(float ta) { target_angle = ta; }
+
     private:
-        // Keep track of player health
+        // HP counter
         unsigned short int player_health;
 
-        // Keep track of invincibility mode progress
+        // Tracks invincibility mode progress
         unsigned short int collectible_count;
+
+        // The angle the player should be looking at
+        float target_angle;
 
     }; // class PlayerGameObject
 

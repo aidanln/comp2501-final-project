@@ -18,34 +18,19 @@ namespace game {
     public:
         EnemyGameObject(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture);
 
-        // Update function for moving the enemy object around
+        // Base Enemy Update function, defined more in-depth in derived classes
         virtual void Update(double delta_time) override;
 
         // Retrieve the players updated position
         void UpdateTarget(const glm::vec3& position);
-        bool TargetUpdateCheck(void);
 
         // Exploded State Handlers
         inline void Explode(void) { exploded = true; }
         inline bool IsExploded(void) const { return exploded; }
 
-        // Movement State Handlers
-        inline bool GetState(void) const { return state; }
-        inline void SetState(bool new_state) { state = new_state; }
-
-    private:
-        
-        // Flags
-        bool exploded; // True means the enemy is dead, false means alive
-        bool state; // 0 = patrolling, 1 = intercepting, represented as a bool to save memory
-
-        // Patrol movement handling
-        glm::vec3 origin_pos;
-        float orbit_angle;
-
-        // Chase movement handling
+    protected:
         glm::vec3 target_pos;
-        Timer target_update_timer;
+        bool exploded;
 
     }; // class EnemyGameObject
 

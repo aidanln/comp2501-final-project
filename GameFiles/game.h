@@ -21,6 +21,7 @@
 #include "game_object.h"
 #include "player_game_object.h"
 #include "enemy_game_object.h"
+#include "derived_enemy_objects.h"
 #include "collectible_game_object.h"
 #include "projectile_game_object.h"
 
@@ -54,6 +55,9 @@ namespace game {
     private:
 
             /* PRIVATE MEMBER FUNCTIONS */
+
+        // Update the cursor tracker variable to be accurate each tick
+        void GetCursorPosition(void);
 
         // Handle user input
         void HandleControls(double delta_time);
@@ -138,6 +142,7 @@ namespace game {
 
         // Trackers
         glm::vec3 player_last_pos;
+        glm::vec3 cursor_pos;
 
     }; // class Game
 
