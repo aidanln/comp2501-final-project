@@ -22,15 +22,20 @@ namespace game {
         virtual void Update(double delta_time) override;
 
         // Retrieve the players updated position
-        void UpdateTarget(const glm::vec3& position);
+        virtual void UpdateTarget(GameObject* obj);
 
         // Exploded State Handlers
         inline void Explode(void) { exploded = true; }
         inline bool IsExploded(void) const { return exploded; }
+        inline int GetDamage() const { return enemy_damage;  }
 
     protected:
         glm::vec3 target_pos;
         bool exploded;
+
+        int enemy_health;
+
+        int enemy_damage;
 
     }; // class EnemyGameObject
 

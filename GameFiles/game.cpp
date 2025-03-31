@@ -366,15 +366,18 @@ namespace game {
     void Game::Update(double delta_time) {
 
         // Update the Player
+        if (player->GetHealth() == 0 && update_flag) {
+            KillPlayer();
+        }
         if (update_flag) {
             player->UpdateTargetAngle(atan2(cursor_pos.y, cursor_pos.x) - (glm::pi<float>() / 2));
             player->Update(delta_time);
+            PlayerBulletCollisionCheck(player, delta_time);
         }
         if (player->EraseTimerCheck()) {
             player->Hide();
         }
         
-
         // Update the Enemies
         for (int i = 0; i < enemy_arr.size(); ++i) {
             EnemyGameObject* enemy = enemy_arr[i];
@@ -384,7 +387,12 @@ namespace game {
                 delete enemy;
             }
             else if (update_flag && !enemy->IsExploded()) {
-                enemy->UpdateTarget(player->GetPosition());
+                if (GunnerEnemy* gunner = dynamic_cast<GunnerEnemy*>(enemy)) {
+                    if (gunner->IsFinished()) {
+                        SpawnGunnerBullet(gunner);
+                    }
+                }
+                enemy->UpdateTarget(player);
                 enemy->Update(delta_time);
                 BulletCollisionCheck(enemy, delta_time);
                 EnemyCollisionCheck(enemy);
@@ -399,6 +407,18 @@ namespace game {
 
             if (bullet->EraseTimerCheck()) {
                 projectile_arr.erase(projectile_arr.begin() + i);
+                delete bullet;
+            }
+        }
+
+        // Update Gunner Projectiles
+        for (int i = 0; i < gunner_projectile_arr.size(); ++i) {
+            ProjectileGameObject* bullet = gunner_projectile_arr[i];
+
+            bullet->Update(delta_time);
+
+            if (bullet->EraseTimerCheck()) {
+                gunner_projectile_arr.erase(gunner_projectile_arr.begin() + i);
                 delete bullet;
             }
         }
@@ -426,18 +446,12 @@ namespace game {
             ExplodeEnemy(enemy);
 
             // update health, provided the player is vulnerable
-            player->DecrementHealth();
-            std::cout << "Lost health! Player health is now " << player->GetHealth() << "." << std::endl;
-
-            // If health reaches zero, cause a game over
-            if (player->GetHealth() <= 0) {
-                KillPlayer();
-            }
+            player->TakeDamage(enemy->GetDamage());
         }
     }
 
 
-    /*** Check for ray-circle collision ***/
+    /*** Check enemy for ray-circle collision ***/
     void Game::BulletCollisionCheck(EnemyGameObject* enemy, double delta_time) {
 
         // check against all non-impacted bullets
@@ -482,6 +496,40 @@ namespace game {
 
         // play explosion sound
         am.PlaySound(boom_sfx);
+    }
+
+
+    /*** Check for player ray-circle collision ***/
+    void Game::PlayerBulletCollisionCheck(PlayerGameObject* player, double delta_time) {
+
+        // check against all non-impacted bullets
+        for (int i = 0; i < gunner_projectile_arr.size(); i++) {
+            if (!gunner_projectile_arr[i]->GetImpact()) {
+                ProjectileGameObject* bullet = gunner_projectile_arr[i];
+
+                // perform ray-circle check via quadratic formula re-arrange
+                glm::vec3 origin_to_center = bullet->GetOrigin() - player->GetPosition();
+                float a = glm::dot(bullet->GetVelocity(), bullet->GetVelocity());
+                float b = 2.0f * glm::dot(origin_to_center, bullet->GetVelocity());
+                float c = glm::dot(origin_to_center, origin_to_center) - BULLET_RADIUS * BULLET_RADIUS;
+
+                // if discriminant is greater/equal zero, we have a collision
+                float discriminant = b * b - 4 * a * c;
+                if (discriminant >= 0) {
+
+                    // compute intersection points and check with the bullet's lifespan to confirm collision
+                    float t1 = (-b - glm::sqrt(discriminant)) / (2.0f * a);
+                    float t2 = (-b + glm::sqrt(discriminant)) / (2.0f * a);
+                    if (t1 <= bullet->GetLifespan() && bullet->GetLifespan() <= t2) {
+
+                        // collision confirmed, handle it
+                        bullet->ImpactOccured();
+                        bullet->Hide();
+                        player->TakeDamage(GUNNER_BULLET_DAMAGE);
+                    }
+                }
+            }
+        }
     }
 
 
@@ -554,6 +602,24 @@ namespace game {
 
         // debug msg
         std::cout << "clicked at (" << cursor_pos.x << ", " << cursor_pos.y << ")" << std::endl;
+    }
+
+
+    /*** Spawn a bullet at the gunner's position with a velocity/rotation corresponding to the gunner's ***/
+    void Game::SpawnGunnerBullet(GunnerEnemy* gunner) {
+
+        // create the bullet object and add to collection
+        ProjectileGameObject* bullet = new ProjectileGameObject(gunner->GetPosition(), sprite_, &sprite_shader_, tex_[7]);
+        gunner_projectile_arr.push_back(bullet);
+        bullet->StartEraseTimer();
+
+        // set appropriate physical properties
+        glm::vec3 aim_line = player->GetPosition() - gunner->GetPosition();
+        bullet->SetVelocity(glm::normalize(aim_line) * GUNNER_BULLET_SPEED);
+        bullet->SetRotation(atan2(aim_line.y, aim_line.x) - (glm::pi<float>() / 2));
+
+        // debug msg
+        std::cout << "gunner shoot towards (" << aim_line.x << ", " << aim_line.y << ")" << std::endl;
     }
 
 
@@ -633,6 +699,9 @@ namespace game {
         }
         for (int i = 0; i < collectible_arr.size(); i++) {
             collectible_arr[i]->Render(view_matrix, current_time_);
+        }
+        for (int i = 0; i < gunner_projectile_arr.size(); i++) {
+            gunner_projectile_arr[i]->Render(view_matrix, current_time_);
         }
         background->Render(view_matrix, current_time_);
     }

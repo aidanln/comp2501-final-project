@@ -4,6 +4,7 @@
 #define DERIVED_ENEMY_OBJECTS_H_
 
 #include "enemy_game_object.h"
+#include <vector>
 
 namespace game {
 
@@ -20,11 +21,12 @@ namespace game {
         // Gunner-specific movement
         void Update(double delta_time) override;
 
+        bool IsFinished();
+
     private:
-        glm::vec3 target_pos;
         glm::vec3 origin_pos;
         float orbit_angle;
-
+        Timer bullet_timer;
     };
 
 
@@ -41,7 +43,6 @@ namespace game {
         void Update(double delta_time) override;
 
     private:
-        glm::vec3 target_pos;
 
     };
 
@@ -58,9 +59,10 @@ namespace game {
         // Kamikaze-specific movement
         void Update(double delta_time) override;
 
-    private:
-        glm::vec3 target_pos;
+        void UpdateTarget(GameObject* obj) override;
 
+    private:
+        bool full_send;
     };
 
 }
