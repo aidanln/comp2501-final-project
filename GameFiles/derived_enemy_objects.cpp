@@ -4,4 +4,57 @@
 
 namespace game {
 
+
+	/*
+	* GunnerEnemy Definitions
+	*/
+	GunnerEnemy::GunnerEnemy(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture)
+		: EnemyGameObject(position, geom, shader, texture), origin_pos(position) {
+		scale_ = glm::vec2(1.1f);
+		orbit_angle = 0;
+	}
+	void GunnerEnemy::Update(double delta_time) {
+		EnemyGameObject::Update(delta_time);
+
+		// move the origin point towards the player
+		origin_pos += velocity_ * GUNNER_SPEED * static_cast<float>(delta_time) * 0.2f;
+
+		// rotate around a the origin position (via parametric equations)
+		orbit_angle += delta_time * ORBIT_SPEED;
+		position_.x = origin_pos.x + ORBIT_RADIUS * cos(orbit_angle);
+		position_.y = origin_pos.y + ORBIT_RADIUS * sin(orbit_angle);
+	}
+
+
+	/*
+	* ChaserEnemy Definitions
+	*/
+	ChaserEnemy::ChaserEnemy(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture)
+		: EnemyGameObject(position, geom, shader, texture) {
+		scale_ = glm::vec2(0.9f);
+	}
+	void ChaserEnemy::Update(double delta_time) {
+		EnemyGameObject::Update(delta_time);
+
+		// basic pursuit method
+		position_.x += velocity_.x * CHASER_SPEED * delta_time;
+		position_.y += velocity_.y * CHASER_SPEED * delta_time;
+	}
+
+
+	/*
+	* KamikazeEnemy Definitions
+	*/
+	KamikazeEnemy::KamikazeEnemy(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture)
+		: EnemyGameObject(position, geom, shader, texture) {
+		scale_ = glm::vec2(0.6f);
+	}
+	void KamikazeEnemy::Update(double delta_time) {
+		EnemyGameObject::Update(delta_time);
+
+		// basic pursuit method
+		position_.x += velocity_.x * KAMIKAZE_SPEED * delta_time;
+		position_.y += velocity_.y * KAMIKAZE_SPEED * delta_time;
+	}
+
 } // namespace game

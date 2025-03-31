@@ -10,7 +10,8 @@ namespace game {
 		// initialize default values
 		player_health = STARTING_HP;
 		collectible_count = 0;
-		angle_ = glm::pi<float>() / 2.0f;
+		angle_ = 0;
+		target_angle = 0;
 	}
 
 
@@ -29,6 +30,11 @@ namespace game {
 		// Update position based on velocity, then decelerate
 		position_ += velocity_ * dt;
 		velocity_ /= 1.01 + (dt * 3);
+
+		// Update rotation using lerp with the target angle, ensures smooth motion
+		float difference = target_angle - angle_;
+		difference = std::remainder(difference, 2.0f * glm::pi<float>());
+		angle_ += difference * 0.1f;
 	}
 
 

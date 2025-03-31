@@ -16,33 +16,35 @@ namespace game {
 		/*** Game Specific Constants ***/
 	
 	// How zoomed in the game should be
-	const float CAMERA_ZOOM = 0.28f;
+	const float CAMERA_ZOOM = 0.25f;
 
-	// FPS Cap so that my laptop doesn't sound like a jet engine trying to hit 500fps unnecesarily
+	// FPS Cap so that my laptop doesn't sound like a jet engine trying to hit 800fps unnecesarily
 	const int FPS_CAP = 144;
 
 	// Spawn-Related Flags and Timers
 	const bool RANDOM_SPAWNING = true;
-	const float ENEMY_SPAWN_DELAY = 4.0f;
+	const float ENEMY_SPAWN_DELAY = 3.0f;
 	const float COLLECTIBLE_SPAWN_DELAY = 6.0f;
 
 	// Collision thresholds
-	const float COLLISION_DIST = 0.8f;
+	const float COLLISION_DIST = 0.9f;
 	const float BULLET_RADIUS = 0.4f;
 
 	// Player related constants
 	const float ACCEL_FORCE = 20.0f;
-	const float MAX_SPEED = 3.5f;
-	const int STARTING_HP = 5;
+	const float MAX_SPEED = 4.2f;
+	const unsigned short int STARTING_HP = 5;
 
 	// Enemy related constants
-	const float ENEMY_SPEED = 2.5f;
-	const float DETECTION_DIST = 2.8f;
-	const float ORBIT_RADIUS = 0.8f;
+	const float GUNNER_SPEED = 1.5f;
+	const float ORBIT_RADIUS = 0.6f;
+	const float ORBIT_SPEED = 4.0f;
+	const float CHASER_SPEED = 2.5f;
+	const float KAMIKAZE_SPEED = 4.0f;
 
 	// Bullet related constnats
 	const float BULLET_SPEED = 18.0f;
-	const float BULLET_LIFESPAN = 0.3f;
+	const float BULLET_LIFESPAN = 0.4f;
 	const float FIRING_COOLDOWN = 0.2f;
 
 }
