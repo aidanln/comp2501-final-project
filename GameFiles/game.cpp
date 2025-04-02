@@ -101,11 +101,10 @@ namespace game {
         // Start all the Timers
         enemy_spawn_timer.Start(ENEMY_SPAWN_DELAY);
         collectible_timer.Start(COLLECTIBLE_SPAWN_DELAY);
-        firing_cooldown.Start(0.5f);
+        firing_cooldown.Start(PLAYER_SHOOT_CD);
 
         // Initialize default member variables
         update_flag = false;
-        semi_auto = true;
         holding_shoot = false;
         camera_pos = glm::vec3(0.0f);
         camera_target_pos = glm::vec3(0.0f);
@@ -200,7 +199,13 @@ namespace game {
         // Setup background
         background = new GameObject(glm::vec3(0.0f, 0.0f, 0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(30.0f));
-        
+
+        // Weapons
+        pistol = new Weapon(PISTOL_INIT_DMG, PLAYER_SHOOT_CD, PLAYER_BULLET_LIFESPAN, PLAYER_BULLET_SPREAD, PLAYER_BULLET_SPEED, PLAYER_SEMI_AUTO);
+        smg = new Weapon(4, 0.08f, 0.2f, 0.25f, 20.0f, false);
+        rifle = new Weapon(10, 0.125f, 0.5f, 0.2f, 25.0f, false);
+        sniper = new Weapon(30, 0.8f, 1.5f, 0.0f, 40.0f, true);
+        player->SetWeapon(pistol);
     }
 
 
@@ -402,10 +407,10 @@ namespace game {
             if (glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_LEFT) == 1) {
                 if (firing_cooldown.Finished() && !holding_shoot) {
                     SpawnPlayerBullet();
-                    firing_cooldown.Start(PLAYER_SHOOT_CD);
+                    firing_cooldown.Start(player->GetWeapon()->GetFiringCooldown());
 
                     // prevent semi-auto weapons from being shot by holding
-                    if (semi_auto) {
+                    if (player->GetWeapon()->IsSemiAuto()) {
                         holding_shoot = true;
                     }
                 }
@@ -671,13 +676,30 @@ namespace game {
 
         // create the bullet object and add to collection
         ProjectileGameObject* bullet = new ProjectileGameObject(player->GetPosition(), sprite_, &sprite_shader_,
-                                                                tex_[7], PLAYER_BULLET_LIFESPAN, player->GetDamage());
+                                                                tex_[7], player->GetWeapon()->GetBulletLifespan(), player->GetWeapon()->GetDamage());
         projectile_arr.push_back(bullet);
         bullet->StartEraseTimer();
 
-        // set appropriate physical properties
-        bullet->SetVelocity(glm::normalize(cursor_pos) * PLAYER_BULLET_SPEED);
-        bullet->SetRotation(atan2(cursor_pos.y, cursor_pos.x) - (HALF_PI));
+        // random gen for bullet spread
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        float spread = player->GetWeapon()->GetBulletSpread();
+        std::uniform_real_distribution<> dis_spread(-spread, spread);
+
+        float random_spread;
+        random_spread = dis_spread(gen);
+
+        // Calculate direction
+        glm::vec3 direction = glm::normalize(cursor_pos);
+        float base_angle = atan2(direction.y, direction.x);
+        float spread_angle = base_angle + random_spread;
+        glm::vec3 spread_direction = glm::vec3(cos(spread_angle), sin(spread_angle), 0);
+
+        // Apply velocity with spread
+        bullet->SetVelocity(spread_direction * player->GetWeapon()->GetBulletSpeed());
+
+        // Apply rotation with spread
+        bullet->SetRotation(spread_angle - HALF_PI);
     }
 
 

@@ -20,6 +20,7 @@ set(HDRS
     geometry.h
     sprite.h
     timer.h
+    weapons.h
 )
  
 set(SRCS
@@ -36,6 +37,7 @@ set(SRCS
     shader.cpp
     sprite.cpp
     timer.cpp
+    weapons.cpp
     sprite_vertex_shader.glsl
     sprite_fragment_shader.glsl
 )
