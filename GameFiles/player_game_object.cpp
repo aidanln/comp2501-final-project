@@ -11,7 +11,6 @@ namespace game {
 		// initialize default values
 		health = PLAYER_INIT_HP;
 		max_health = health;
-		damage = PLAYER_INIT_DMG;
 		collectible_count = 0;
 		angle_ = 0;
 		target_angle = 0;

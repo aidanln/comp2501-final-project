@@ -24,6 +24,7 @@
 #include "derived_enemy_objects.h"
 #include "collectible_game_object.h"
 #include "projectile_game_object.h"
+#include "weapons.h"
 
 #include "defs.h"
 
@@ -149,11 +150,16 @@ namespace game {
 
         // Flags
         bool update_flag;
-        bool semi_auto;
         bool holding_shoot;
 
         // Trackers
         glm::vec3 cursor_pos;
+
+        // Weapons
+        Weapon* pistol;
+        Weapon* smg;
+        Weapon* rifle;
+        Weapon* sniper;
 
     }; // class Game
 

@@ -4,6 +4,7 @@
 #define PLAYER_GAME_OBJECT_H_
 
 #include "game_object.h"
+#include "weapons.h"
 
 namespace game {
 
@@ -23,19 +24,18 @@ namespace game {
         // Health handlers
         inline unsigned short int GetHealth(void) const { return health; }
         void TakeDamage(int recieved_dmg);
-        
-        // Damage handlers
-        inline int GetDamage(void) const { return damage; }
-        inline void SetDamage(int dmg) { damage = dmg; }
 
         // TEMPORARY, collectible handlers
         inline unsigned short int GetCollectibleCount(void) const { return collectible_count; }
         inline void IncrementCollectibleCount(void) { collectible_count++; }
 
+        inline Weapon* GetWeapon() { return weapon; }
+        inline void SetWeapon(Weapon* w) { weapon = w; }
+
     private:
         unsigned short int health;
         unsigned short int max_health;
-        unsigned short int damage;
+        
 
         // Timers for handling player health
         Timer i_frames_timer;
@@ -47,6 +47,9 @@ namespace game {
 
         // TEMPORARY, amount of collectibles the player has
         unsigned short int collectible_count;
+
+        // i need more bullets
+        Weapon* weapon;
 
     };
 

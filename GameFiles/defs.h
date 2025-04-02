@@ -51,7 +51,7 @@ namespace game {
 
 	// Player general values
 	const unsigned short int PLAYER_INIT_HP = 100;
-	const unsigned short int PLAYER_INIT_DMG = 2;
+	const unsigned short int PISTOL_INIT_DMG = 2;
 	const float PLAYER_ACCEL_FORCE = 20.0f;
 	const float PLAYER_MAX_SPEED = 4.2f;
 
@@ -65,6 +65,8 @@ namespace game {
 	const float PLAYER_SHOOT_CD = 0.2f;
 	const float PLAYER_BULLET_SPEED = 18.0f;
 	const float PLAYER_BULLET_LIFESPAN = 0.4f;
+	const float PLAYER_BULLET_SPREAD = 0.0f;
+	const bool PLAYER_SEMI_AUTO = false;
 
 
 
