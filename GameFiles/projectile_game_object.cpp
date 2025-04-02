@@ -6,10 +6,11 @@ namespace game {
 
 
 	/*** Constructor ***/
-	ProjectileGameObject::ProjectileGameObject(const glm::vec3 &position, Geometry* geom, Shader* shader, const GLuint& texture)
-		: GameObject(position, geom, shader, texture), origin(position) {
+	ProjectileGameObject::ProjectileGameObject(
+		const glm::vec3 &position, Geometry* geom, Shader* shader, const GLuint& texture, float lifespan, int damage)
+		: GameObject(position, geom, shader, texture), origin(position), lifespan(lifespan), damage(damage) {
 		// default declarations
-		scale_ = glm::vec2(0.4f);
+		scale_ = glm::vec2(0.45f);
 		time_elapsed = 0.0f;
 		impact_flag = false;
 	}
@@ -24,7 +25,7 @@ namespace game {
 
 	/*** Setup projectile to be erased ***/
 	void ProjectileGameObject::StartEraseTimer(void) {
-		erase_timer_.Start(BULLET_LIFESPAN);
+		erase_timer_.Start(lifespan);
 	}
 
 

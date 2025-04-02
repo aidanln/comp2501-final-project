@@ -5,7 +5,9 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp> 
+#include <glm/gtx/compatibility.hpp>
 #include <cmath>
+
 #include "game_object.h"
 #include "timer.h"
 #include "defs.h"
@@ -27,15 +29,23 @@ namespace game {
         // Exploded State Handlers
         inline void Explode(void) { exploded = true; }
         inline bool IsExploded(void) const { return exploded; }
-        inline int GetDamage() const { return enemy_damage;  }
+
+        // Health Handlers
+        inline int GetHealth(void) const { return health; }
+        void TakeDamage(int recieved_dmg);
+
+        // Damage Handlers
+        inline int GetDamage(void) const { return damage; }
+        inline void SetDamage(int dmg) { damage = dmg; }
 
     protected:
-        glm::vec3 target_pos;
+        // member vars to be inherited by all enemy types
+        int health;
+        int damage;
         bool exploded;
-
-        int enemy_health;
-
-        int enemy_damage;
+        float target_angle;
+        glm::vec3 target_pos;
+        
 
     }; // class EnemyGameObject
 

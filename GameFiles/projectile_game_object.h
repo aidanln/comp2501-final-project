@@ -14,7 +14,8 @@ namespace game {
 
     public:
         // constructor
-        ProjectileGameObject(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture);
+        ProjectileGameObject(const glm::vec3& position, Geometry* geom, Shader* shader,
+                             const GLuint& texture, float lifespan, int damage);
 
         // overriden functions
         void Update(double delta_time) override; // moves based on velocity vector
@@ -24,6 +25,7 @@ namespace game {
         // getters
         inline const glm::vec3& GetOrigin(void) const { return origin;  }
         inline float GetLifespan(void) const { return time_elapsed; }
+        inline float GetDamage(void) const { return damage; }
         inline bool GetImpact(void) const { return impact_flag; }
 
         // setter, indicates an impact has occured
@@ -32,7 +34,9 @@ namespace game {
     private:
         // private member variables
         glm::vec3 origin;
+        float lifespan;
         float time_elapsed;
+        int damage;
         bool impact_flag;
 
     }; // class ProjectileGameObject

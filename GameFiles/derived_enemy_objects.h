@@ -4,10 +4,8 @@
 #define DERIVED_ENEMY_OBJECTS_H_
 
 #include "enemy_game_object.h"
-#include <vector>
 
 namespace game {
-
 
     /*
     * Gunner -> orbits around a point that moves slowly towards the player, shoots at the player
@@ -21,12 +19,19 @@ namespace game {
         // Gunner-specific movement
         void Update(double delta_time) override;
 
+        // Check if the shooting cooldown has finished
         bool IsFinished();
 
+        // Bullet damage helper
+        inline int GetBulletDamage(void) const { return bullet_damage; }
+
     private:
+        // movement vars
         glm::vec3 origin_pos;
         float orbit_angle;
-        Timer bullet_timer;
+        // shooting vars
+        int bullet_damage;
+        Timer shoot_timer;
     };
 
 
@@ -43,7 +48,7 @@ namespace game {
         void Update(double delta_time) override;
 
     private:
-
+        // No member vars yet
     };
 
 
@@ -62,7 +67,7 @@ namespace game {
         void UpdateTarget(GameObject* obj) override;
 
     private:
-        bool full_send;
+        // No member vars yet
     };
 
 }

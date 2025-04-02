@@ -16,10 +16,10 @@ namespace game {
             ~Timer() {}
 
             // Start the timer now: end time given in seconds
-            void Start(float end_time); 
+            void Start(float end_time);
 
             // Check if timer has finished
-            bool Finished(void);
+            bool Finished(void) const;
 
         private:
             // Member vars

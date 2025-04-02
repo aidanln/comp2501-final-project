@@ -7,12 +7,19 @@ namespace game {
 	/*** Constructor ***/
 	PlayerGameObject::PlayerGameObject(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture)
 		: GameObject(position, geom, shader, texture) {
+
 		// initialize default values
-		player_health = STARTING_HP;
-		player_damage = 2;
+		health = PLAYER_INIT_HP;
+		max_health = health;
+		damage = PLAYER_INIT_DMG;
 		collectible_count = 0;
 		angle_ = 0;
 		target_angle = 0;
+		
+		// start health timers
+		i_frames_timer.Start(0.0);
+		regen_cd.Start(0.0);
+		regen_step.Start(0.0);
 	}
 
 
@@ -24,8 +31,8 @@ namespace game {
 		velocity_ += acceleration_ * dt;
 
 		// Ensure velocity doesn't exceed max speed
-		if (glm::length(velocity_) > MAX_SPEED) {
-			velocity_ = glm::normalize(velocity_) * MAX_SPEED;
+		if (glm::length(velocity_) > PLAYER_MAX_SPEED) {
+			velocity_ = glm::normalize(velocity_) * PLAYER_MAX_SPEED;
 		}
 
 		// Update position based on velocity, then decelerate
@@ -33,21 +40,49 @@ namespace game {
 		velocity_ /= 1.01 + (dt * 3);
 
 		// Update rotation using lerp with the target angle, ensures smooth motion
-		float difference = target_angle - angle_;
-		difference = std::remainder(difference, 2.0f * glm::pi<float>());
-		angle_ += difference * 0.1f;
+		angle_ = LerpAngle(angle_, target_angle, 0.1f);
+
+		// Regenerate health, provided the cooldown is finished and we are not already at max
+		if (regen_cd.Finished() && health < max_health) {
+
+			// Use "steps" to regenerate, i.e. regen one time once a step has finished
+			if (regen_step.Finished()) {
+				regen_step.Start(REGEN_STEP_CD);
+				health += REGEN_AMOUNT;
+
+				// clamp health to never exceed max_health
+				if (health > max_health) {
+					health = max_health;
+				}
+
+				// debug, needed until HUD is implemented
+				std::cout << "Player HP: " << health << " -> Regenerated " << REGEN_AMOUNT << " Health." << std::endl;
+			}
+		}
 	}
 
 
-	/*** Decrease health by 1 (provided it's above 0) ***/
-	void PlayerGameObject::TakeDamage(int damage) {
-		if (player_health > 0) {
-			player_health -= damage;
+	/*** Decrease health by param damage ***/
+	void PlayerGameObject::TakeDamage(int recieved_dmg) {
+
+		// Ensure damage isn't taken during invincibility frames
+		if (i_frames_timer.Finished() && health > 0) {
+			health -= recieved_dmg;
+
+			// enters if-statement if dead, clamp health to never go below 0
+			if (health < 0) {
+				health = 0;
+			}
+
+			// start associated timers if not dead
+			else {
+				regen_cd.Start(REGEN_CD);
+				i_frames_timer.Start(INVINCIBILITY_DURATION);
+			}
+
+			// debug, needed until HUD is implemented
+			std::cout << "Player HP: " << health << " -> Took " << recieved_dmg << " Damage." << std::endl;
 		}
-		if (player_health < 0) {
-			player_health = 0;
-		}
-		std::cout << "Lost health! Player health is now " << player_health << "." << std::endl;
 	}
 
-} // namespace game
+}

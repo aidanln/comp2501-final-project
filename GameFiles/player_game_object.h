@@ -4,7 +4,6 @@
 #define PLAYER_GAME_OBJECT_H_
 
 #include "game_object.h"
-#include "defs.h"
 
 namespace game {
 
@@ -18,32 +17,39 @@ namespace game {
         // Update function for moving the player object around
         void Update(double delta_time) override;
 
-        // getters
-        inline unsigned short int GetHealth(void) const { return player_health; }
-        inline unsigned short int GetCollectibleCount(void) const { return collectible_count; }
-
-        // Methods for handling health and collectible trackers
-        inline void IncrementCollectibleCount(void) { collectible_count++; }
-        void TakeDamage(int damage);
-
-        // Methods for handling cursor-based rotation
+        // Update the target angle, allows for cursor-based rotation
         inline void UpdateTargetAngle(float ta) { target_angle = ta; }
 
+        // Health handlers
+        inline unsigned short int GetHealth(void) const { return health; }
+        void TakeDamage(int recieved_dmg);
+        
+        // Damage handlers
+        inline int GetDamage(void) const { return damage; }
+        inline void SetDamage(int dmg) { damage = dmg; }
+
+        // TEMPORARY, collectible handlers
+        inline unsigned short int GetCollectibleCount(void) const { return collectible_count; }
+        inline void IncrementCollectibleCount(void) { collectible_count++; }
+
     private:
-        // HP counter
-        unsigned short int player_health;
+        unsigned short int health;
+        unsigned short int max_health;
+        unsigned short int damage;
 
-        // Damage
-        unsigned short int player_damage;
+        // Timers for handling player health
+        Timer i_frames_timer;
+        Timer regen_cd;
+        Timer regen_step;
 
-        // Tracks invincibility mode progress
-        unsigned short int collectible_count;
-
-        // The angle the player should be looking at
+        // Intended angle, GameObject::angle_ uses linear interpolation to reach this
         float target_angle;
 
-    }; // class PlayerGameObject
+        // TEMPORARY, amount of collectibles the player has
+        unsigned short int collectible_count;
 
-} // namespace game
+    };
+
+}
 
 #endif // PLAYER_GAME_OBJECT_H_

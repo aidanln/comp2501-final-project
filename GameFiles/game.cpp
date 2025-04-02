@@ -16,24 +16,27 @@ const glm::vec3 viewport_background_color_g(0.1, 0.1, 0.1);
 
 namespace game {
 
-    /*** Constructor, unused, replaced by Init() ***/
+    /*** Constructor is unused, replaced by Init() ***/
     Game::Game(void) {}
 
 
     /*** Destructor ***/
     Game::~Game(void) {
+
         // Free memory used by game world
         DestroyGameWorld(); 
+
         // Free rendering resources
         delete sprite_;
         delete tiling_sprite_;
+
         // Close window
         glfwDestroyWindow(window_);
         glfwTerminate();
     }
 
 
-    /*** Initialize Game and OpenGL metadata ***/
+    /*** Initialize Game and GLFW/GLEW data ***/
     void Game::Init(void) {
 
         // Initialize the window management library (GLFW)
@@ -65,6 +68,24 @@ namespace game {
         // Set event callbacks
         glfwSetFramebufferSizeCallback(window_, ResizeCallback);
 
+        // Setup the window icon
+        std::string icon_path = resources_directory_g + "/textures/enemy_spawn.png";
+        int icon_width, icon_height;
+        unsigned char* icon_pixels = SOIL_load_image(icon_path.c_str(), &icon_width, &icon_height, 0, SOIL_LOAD_RGBA);
+
+        // Set the window icon
+        if (icon_pixels) {
+            GLFWimage icon{};
+            icon.width = icon_width;
+            icon.height = icon_height;
+            icon.pixels = icon_pixels;
+            glfwSetWindowIcon(window_, 1, &icon);
+            SOIL_free_image_data(icon_pixels); // Free the memory used
+        }
+        else {
+            std::cerr << "Failed to load window icon: " << icon_path << std::endl;
+        }
+
         // Initialize sprite geometry
         sprite_ = new Sprite();
         sprite_->CreateGeometry();
@@ -78,15 +99,16 @@ namespace game {
         current_time_ = 0.0;
 
         // Start all the Timers
-        spawn_timer.Start(4.0f);
-        collectible_timer.Start(7.5f);
+        enemy_spawn_timer.Start(ENEMY_SPAWN_DELAY);
+        collectible_timer.Start(COLLECTIBLE_SPAWN_DELAY);
         firing_cooldown.Start(0.5f);
 
         // Initialize default member variables
-        update_flag = true;
+        update_flag = false;
         semi_auto = true;
         holding_shoot = false;
-        player_last_pos = glm::vec3(0.0f);
+        camera_pos = glm::vec3(0.0f);
+        camera_target_pos = glm::vec3(0.0f);
         cursor_pos = glm::vec3(0.0f);
 
         // Audio Setup
@@ -148,7 +170,8 @@ namespace game {
             tex_stars = 4,
             tex_explosion = 5,
             tex_collectible = 6,
-            tex_bullet = 7
+            tex_bullet = 7,
+            tex_portal = 8
         };
         textures.push_back("/textures/player_ship.png");    // 0, tex_player
         textures.push_back("/textures/gunner_ship.png");    // 1, tex_gunner
@@ -158,6 +181,7 @@ namespace game {
         textures.push_back("/textures/explosion.png");      // 5, tex_explosion
         textures.push_back("/textures/collectible.png");    // 6, tex_collectible
         textures.push_back("/textures/bullet.png");         // 7, tex_bullet
+        textures.push_back("/textures/enemy_spawn.png");    // 8, tex_portal
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
@@ -176,35 +200,74 @@ namespace game {
         // Setup background
         background = new GameObject(glm::vec3(0.0f, 0.0f, 0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(30.0f));
-
-        // Game Setup is done, indicate with the start-up sound
-        am.PlaySound(game_start_sfx);
-        am.PlaySound(bg_music); // start bg music
+        
     }
 
 
     /*** Destroy the game world, pseudo destructor ***/
     void Game::DestroyGameWorld(void) {
+
         // delete player
         delete player;
+
         // delete enemies
         for (int i = 0; i < enemy_arr.size(); ++i) {
             delete enemy_arr[i];
         }
-        // delete projectiles
+
+        // delete lingering player projectiles
         for (int i = 0; i < projectile_arr.size(); ++i) {
             delete projectile_arr[i];
         }
+
+        // delete lingering gunner projectiles
+        for (int i = 0; i < gunner_projectile_arr.size(); ++i) {
+            delete gunner_projectile_arr[i];
+        }
+
         // delete collectibles
         for (int i = 0; i < collectible_arr.size(); ++i) {
             delete collectible_arr[i];
         }
+
         // shut down audio manager
         am.ShutDown();
     }
 
 
-    /*** The main game loop, we stay stuck in here until the window closes ***/
+    /*** Play the Intro sequence, might be better to put this in MainLoop() idk ***/
+    void Game::PlayIntro(void) {
+
+        // initialize the intro
+        intro_timer.Start(INTRO_DURATION);
+        am.PlaySound(game_start_sfx);
+        double last_time = glfwGetTime();
+
+        // hang until the intro timer is done
+        while (!intro_timer.Finished()) {
+            double current_time = glfwGetTime();
+            double delta_time = current_time - last_time;
+            last_time = current_time;
+
+            // from MainLoop()
+            glfwPollEvents();
+            HandleControls(delta_time);
+            Render();
+            glfwSwapBuffers(window_);
+            if (FPS_CAP != 0) {
+                while (1 / delta_time > FPS_CAP) {
+                    delta_time = glfwGetTime() - last_time;
+                }
+            }
+        }
+
+        // intro is done, so allow gameplay updates, play bg music, then run MainLoop (in main.cpp)
+        update_flag = true;
+        am.PlaySound(bg_music);
+    }
+
+
+    /*** Loops during gameplay ***/
     void Game::MainLoop(void) {
 
         // Loop while the user did not close the window
@@ -223,7 +286,7 @@ namespace game {
             glfwPollEvents();
 
             // Update the cursor position
-            GetCursorPosition();
+            UpdateCursorPosition();
 
             // Handle user input
             HandleControls(delta_time);
@@ -231,14 +294,11 @@ namespace game {
             // Update all the game objects
             Update(delta_time);
 
-            // Update the players last position to ensure proper camera functionality
-            player_last_pos = player->GetPosition();
-
             // Check if timers are finished, unless a game over occurs
             if (update_flag && RANDOM_SPAWNING) {
-                if (spawn_timer.Finished()) {
+                if (enemy_spawn_timer.Finished()) {
                     SpawnEnemy();
-                    spawn_timer.Start(ENEMY_SPAWN_DELAY);
+                    enemy_spawn_timer.Start(ENEMY_SPAWN_DELAY);
                 }
                 if (collectible_timer.Finished()) {
                     SpawnCollectible();
@@ -252,16 +312,18 @@ namespace game {
             // Push buffer drawn in the background onto the display
             glfwSwapBuffers(window_);
 
-            // Enforce FPS cap, temporary solution till I find a workaround for my laptop
-            while (1 / delta_time > FPS_CAP) {
-                delta_time = glfwGetTime() - last_time;
+            // Enforce FPS cap
+            if (FPS_CAP != 0) {
+                while (1 / delta_time > FPS_CAP) {
+                    delta_time = glfwGetTime() - last_time;
+                }
             }
         }
     }
 
 
     /*** Get the coordinates of the mouse cursor in the gameworld ***/
-    void Game::GetCursorPosition(void) {
+    void Game::UpdateCursorPosition(void) {
 
         // initialize cursor position (relative to monitor) and window size
         double mouse_x, mouse_y;
@@ -309,11 +371,6 @@ namespace game {
             glfwSetWindowShouldClose(window_, true);
         }
 
-        // Debug, kills the player instantly (keys: K)
-        if (glfwGetKey(window_, GLFW_KEY_K) == 1) {
-            KillPlayer();
-        }
-
         // Print FPS, temporary solution until the HUD is created
         if (glfwGetKey(window_, GLFW_KEY_F) == 1) {
             DisplayFPS(delta_time);
@@ -329,35 +386,42 @@ namespace game {
 
             // Handle physics-based movement input (keys: W, A, S, D)
             if (glfwGetKey(window_, GLFW_KEY_W) == 1) {
-                accel += up * ACCEL_FORCE;
+                accel += up * PLAYER_ACCEL_FORCE;
             }
             if (glfwGetKey(window_, GLFW_KEY_S) == 1) {
-                accel -= up * ACCEL_FORCE;
+                accel -= up * PLAYER_ACCEL_FORCE;
             }
             if (glfwGetKey(window_, GLFW_KEY_A) == 1) {
-                accel += left * ACCEL_FORCE;
+                accel += left * PLAYER_ACCEL_FORCE;
             }
             if (glfwGetKey(window_, GLFW_KEY_D) == 1) {
-                accel -= left * ACCEL_FORCE;
+                accel -= left * PLAYER_ACCEL_FORCE;
             }
 
             // Handle firing a bullet (mouse: LEFT-CLICK)
             if (glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_LEFT) == 1) {
-                // handle semi-auto weapons
-                if (semi_auto && !holding_shoot) {
-                    SpawnBullet();
-                    holding_shoot = true;
-                }
-                // handle auto weapons
-                else if (!semi_auto && firing_cooldown.Finished()) {
-                    SpawnBullet();
-                    firing_cooldown.Start(FIRING_COOLDOWN);
+                if (firing_cooldown.Finished() && !holding_shoot) {
+                    SpawnPlayerBullet();
+                    firing_cooldown.Start(PLAYER_SHOOT_CD);
+
+                    // prevent semi-auto weapons from being shot by holding
+                    if (semi_auto) {
+                        holding_shoot = true;
+                    }
                 }
             }
-            else { holding_shoot = false; }
+            // reset holding_shoot back to false if left-click isn't pressed
+            else { 
+                holding_shoot = false;
+            }
 
             // Update player acceleration based on input
             player->SetAcceleration(accel);
+
+            // Debug, kills the player instantly (keys: K)
+            if (glfwGetKey(window_, GLFW_KEY_K) == 1) {
+                KillPlayer();
+            }
         }
     }
 
@@ -365,15 +429,22 @@ namespace game {
     /*** Update all the game objects ***/
     void Game::Update(double delta_time) {
 
+        // Update the Camera Position
+        camera_target_pos = player->GetPosition();
+        camera_pos = glm::mix(camera_pos, camera_target_pos, CAMERA_SMOOTHNESS); // ensures smooth movement
+
         // Update the Player
-        if (player->GetHealth() == 0 && update_flag) {
-            KillPlayer();
-        }
         if (update_flag) {
-            player->UpdateTargetAngle(atan2(cursor_pos.y, cursor_pos.x) - (glm::pi<float>() / 2));
-            player->Update(delta_time);
-            PlayerBulletCollisionCheck(player, delta_time);
+            if (player->GetHealth() <= 0) {
+                KillPlayer();
+            }
+            else {
+                player->UpdateTargetAngle(atan2(cursor_pos.y, cursor_pos.x) - (HALF_PI));
+                player->Update(delta_time);
+                PlayerShotCheck(delta_time);
+            }
         }
+
         if (player->EraseTimerCheck()) {
             player->Hide();
         }
@@ -386,20 +457,30 @@ namespace game {
                 enemy_arr.erase(enemy_arr.begin() + i);
                 delete enemy;
             }
-            else if (update_flag && !enemy->IsExploded()) {
-                if (GunnerEnemy* gunner = dynamic_cast<GunnerEnemy*>(enemy)) {
-                    if (gunner->IsFinished()) {
-                        SpawnGunnerBullet(gunner);
+
+            else if (!enemy->IsExploded()) {
+
+                if (enemy->GetHealth() <= 0) {
+                    ExplodeEnemy(enemy);
+                }
+                else {
+                    enemy->Update(delta_time);
+
+                    if (update_flag) {
+                        if (GunnerEnemy* gunner = dynamic_cast<GunnerEnemy*>(enemy)) {
+                            if (gunner->IsFinished()) {
+                                SpawnGunnerBullet(gunner);
+                            }
+                        }
+                        enemy->UpdateTarget(player);
+                        EnemyShotCheck(enemy, delta_time);
+                        EnemyCollisionCheck(enemy);
                     }
                 }
-                enemy->UpdateTarget(player);
-                enemy->Update(delta_time);
-                BulletCollisionCheck(enemy, delta_time);
-                EnemyCollisionCheck(enemy);
             }
         }
 
-        // Update the Projectiles
+        // Update Projectiles shot by the player
         for (int i = 0; i < projectile_arr.size(); ++i) {
             ProjectileGameObject* bullet = projectile_arr[i];
 
@@ -411,7 +492,7 @@ namespace game {
             }
         }
 
-        // Update Gunner Projectiles
+        // Update Projectiles shot by the gunner enemies
         for (int i = 0; i < gunner_projectile_arr.size(); ++i) {
             ProjectileGameObject* bullet = gunner_projectile_arr[i];
 
@@ -431,56 +512,18 @@ namespace game {
                 collectible_arr.erase(collectible_arr.begin() + i);
                 delete collectible;
             }
-            else if (CollisionCheck(player, collectible, COLLISION_DIST) && !collectible->IsCollected()) {
+            else if (CollisionCheck(player, collectible) && !collectible->IsCollected()) {
                 CollectItem(collectible);
             }
         }
     }
 
 
-    /*** Check for collisions with the param enemy and update their state ***/
+    /*** Check for collisions with the param enemy ***/
     void Game::EnemyCollisionCheck(EnemyGameObject* enemy) {
-
-        // handle an enemy running into the player
-        if (CollisionCheck(player, enemy, COLLISION_DIST)) {
-            ExplodeEnemy(enemy);
-
-            // update health, provided the player is vulnerable
+        if (CollisionCheck(player, enemy)) {
+            enemy->TakeDamage(enemy->GetHealth());
             player->TakeDamage(enemy->GetDamage());
-        }
-    }
-
-
-    /*** Check enemy for ray-circle collision ***/
-    void Game::BulletCollisionCheck(EnemyGameObject* enemy, double delta_time) {
-
-        // check against all non-impacted bullets
-        for (int i = 0; i < projectile_arr.size(); i++) {
-            if (!projectile_arr[i]->GetImpact()) {
-                ProjectileGameObject* bullet = projectile_arr[i];
-
-                // perform ray-circle check via quadratic formula re-arrange
-                glm::vec3 origin_to_center = bullet->GetOrigin() - enemy->GetPosition();
-                float a = glm::dot(bullet->GetVelocity(), bullet->GetVelocity());
-                float b = 2.0f * glm::dot(origin_to_center, bullet->GetVelocity());
-                float c = glm::dot(origin_to_center, origin_to_center) - BULLET_RADIUS * BULLET_RADIUS;
-
-                // if discriminant is greater/equal zero, we have a collision
-                float discriminant = b * b - 4 * a * c;
-                if (discriminant >= 0) {
-
-                    // compute intersection points and check with the bullet's lifespan to confirm collision
-                    float t1 = (-b - glm::sqrt(discriminant)) / (2.0f * a);
-                    float t2 = (-b + glm::sqrt(discriminant)) / (2.0f * a);
-                    if (t1 <= bullet->GetLifespan() && bullet->GetLifespan() <= t2) {
-
-                        // collision confirmed, handle it
-                        bullet->ImpactOccured();
-                        bullet->Hide();
-                        ExplodeEnemy(enemy);
-                    }
-                }
-            }
         }
     }
 
@@ -499,8 +542,45 @@ namespace game {
     }
 
 
-    /*** Check for player ray-circle collision ***/
-    void Game::PlayerBulletCollisionCheck(PlayerGameObject* player, double delta_time) {
+    /*** Check for ray-circle collision between an enemy and player-shot bullets ***/
+    void Game::EnemyShotCheck(EnemyGameObject* enemy, double delta_time) {
+
+        // check against all non-impacted bullets
+        for (int i = 0; i < projectile_arr.size(); i++) {
+            if (!projectile_arr[i]->GetImpact()) {
+                ProjectileGameObject* bullet = projectile_arr[i];
+                float collision_dist = enemy->GetXRadius() + BULLET_RADIUS;
+
+                // perform ray-circle check via quadratic formula re-arrange
+                glm::vec3 origin_to_center = bullet->GetOrigin() - enemy->GetPosition();
+                float a = glm::dot(bullet->GetVelocity(), bullet->GetVelocity());
+                float b = 2.0f * glm::dot(origin_to_center, bullet->GetVelocity());
+                float c = glm::dot(origin_to_center, origin_to_center) - collision_dist * collision_dist;
+
+                // if discriminant is greater/equal zero, we have a collision
+                float discriminant = b * b - 4 * a * c;
+                if (discriminant >= 0) {
+
+                    // compute intersection points and check with the bullet's lifespan to confirm collision
+                    float t1 = (-b - glm::sqrt(discriminant)) / (2.0f * a);
+                    float t2 = (-b + glm::sqrt(discriminant)) / (2.0f * a);
+                    float lifespan = bullet->GetLifespan();
+                    if (t1 <= lifespan && lifespan <= t2) {
+
+                        // collision confirmed, handle it
+                        bullet->ImpactOccured();
+                        bullet->Hide();
+                        enemy->TakeDamage(bullet->GetDamage());
+                    }
+                }
+            }
+        }
+    }
+
+
+    /*** Check for ray-circle collision between the player and enemy-shot bullets ***/
+    void Game::PlayerShotCheck(double delta_time) {
+        float collision_dist = player->GetXRadius() + BULLET_RADIUS;
 
         // check against all non-impacted bullets
         for (int i = 0; i < gunner_projectile_arr.size(); i++) {
@@ -511,7 +591,7 @@ namespace game {
                 glm::vec3 origin_to_center = bullet->GetOrigin() - player->GetPosition();
                 float a = glm::dot(bullet->GetVelocity(), bullet->GetVelocity());
                 float b = 2.0f * glm::dot(origin_to_center, bullet->GetVelocity());
-                float c = glm::dot(origin_to_center, origin_to_center) - BULLET_RADIUS * BULLET_RADIUS;
+                float c = glm::dot(origin_to_center, origin_to_center) - collision_dist * collision_dist;
 
                 // if discriminant is greater/equal zero, we have a collision
                 float discriminant = b * b - 4 * a * c;
@@ -520,12 +600,13 @@ namespace game {
                     // compute intersection points and check with the bullet's lifespan to confirm collision
                     float t1 = (-b - glm::sqrt(discriminant)) / (2.0f * a);
                     float t2 = (-b + glm::sqrt(discriminant)) / (2.0f * a);
-                    if (t1 <= bullet->GetLifespan() && bullet->GetLifespan() <= t2) {
+                    float lifespan = bullet->GetLifespan();
+                    if (t1 <= lifespan && lifespan <= t2) {
 
                         // collision confirmed, handle it
                         bullet->ImpactOccured();
                         bullet->Hide();
-                        player->TakeDamage(GUNNER_BULLET_DAMAGE);
+                        player->TakeDamage(bullet->GetDamage());
                     }
                 }
             }
@@ -543,6 +624,7 @@ namespace game {
 
     /*** Spawn a destroyer in a random position on screen, triggered via timer (6 seconds) ***/
     void Game::SpawnEnemy(void) {
+        // TEMPORARY, WILL BE REFACTORED ONCE ENEMY SPAWNS ARE ADDED
 
         // Random Number Generator
         std::random_device rd;
@@ -551,7 +633,6 @@ namespace game {
         std::uniform_real_distribution<> dis_y(-4.0f, 4.0f);
 
         // generate the x and y coordinates, must be a certain distance from the player
-        // LOWKEY UNOPTIMAL THIS MAKES TTC VERY RANDOM
         glm::vec3 rand_pos(0.0f);
         while (glm::length(rand_pos) < 3.0f) {
             rand_pos.x = dis_x(gen);
@@ -565,6 +646,7 @@ namespace game {
 
     /*** Spawn a collectible in a random position on screen, triggered via timer(8 seconds) ***/
     void Game::SpawnCollectible(void) {
+        // TEMPORARY, WILL BE REMOVED ONCE POWER-UPS ARE ADDED
 
         // Random Number Generator
         std::random_device rd;
@@ -573,7 +655,6 @@ namespace game {
         std::uniform_real_distribution<> dis_y(-4.6f, 4.6f);
 
         // generate the x and y coordinates, must be a certain distance from the player
-        // LOWKEY UNOPTIMAL THIS MAKES FRAME TIMES VERY RANDOM
         glm::vec3 rand_pos(0.0f);
         while (glm::length(rand_pos) < 3.0f) {
             rand_pos.x = dis_x(gen);
@@ -586,22 +667,17 @@ namespace game {
 
 
     /*** Spawn a bullet at the player's position with a velocity/rotation corresponding to the player's ***/
-    void Game::SpawnBullet(void) {
+    void Game::SpawnPlayerBullet(void) {
 
         // create the bullet object and add to collection
-        ProjectileGameObject* bullet = new ProjectileGameObject(player->GetPosition(), sprite_, &sprite_shader_, tex_[7]);
+        ProjectileGameObject* bullet = new ProjectileGameObject(player->GetPosition(), sprite_, &sprite_shader_,
+                                                                tex_[7], PLAYER_BULLET_LIFESPAN, player->GetDamage());
         projectile_arr.push_back(bullet);
         bullet->StartEraseTimer();
 
         // set appropriate physical properties
-        bullet->SetVelocity(glm::normalize(cursor_pos) * BULLET_SPEED);
-        bullet->SetRotation(atan2(cursor_pos.y, cursor_pos.x) - (glm::pi<float>() / 2));
-
-        // Ensures bullet comes out at the top of the player
-        player->SetRotation(atan2(cursor_pos.y, cursor_pos.x) - (glm::pi<float>() / 2));
-
-        // debug msg
-        std::cout << "clicked at (" << cursor_pos.x << ", " << cursor_pos.y << ")" << std::endl;
+        bullet->SetVelocity(glm::normalize(cursor_pos) * PLAYER_BULLET_SPEED);
+        bullet->SetRotation(atan2(cursor_pos.y, cursor_pos.x) - (HALF_PI));
     }
 
 
@@ -609,36 +685,39 @@ namespace game {
     void Game::SpawnGunnerBullet(GunnerEnemy* gunner) {
 
         // create the bullet object and add to collection
-        ProjectileGameObject* bullet = new ProjectileGameObject(gunner->GetPosition(), sprite_, &sprite_shader_, tex_[7]);
+        ProjectileGameObject* bullet = new ProjectileGameObject(gunner->GetPosition(), sprite_, &sprite_shader_,
+                                                                tex_[7], GUNNER_BULLET_LIFESPAN, gunner->GetBulletDamage());
         gunner_projectile_arr.push_back(bullet);
         bullet->StartEraseTimer();
 
         // set appropriate physical properties
         glm::vec3 aim_line = player->GetPosition() - gunner->GetPosition();
         bullet->SetVelocity(glm::normalize(aim_line) * GUNNER_BULLET_SPEED);
-        bullet->SetRotation(atan2(aim_line.y, aim_line.x) - (glm::pi<float>() / 2));
-
-        // debug msg
-        std::cout << "gunner shoot towards (" << aim_line.x << ", " << aim_line.y << ")" << std::endl;
+        bullet->SetRotation(atan2(aim_line.y, aim_line.x) - (HALF_PI));
     }
 
 
-    /*** Check if two objects have collided (using collision dist constant) ***/
-    bool Game::CollisionCheck(GameObject* obj_1, GameObject* obj_2, float dist) {
-        return glm::length(obj_1->GetPosition() - obj_2->GetPosition()) < dist;
+    /*** Handle Circle-Circle collision checking ***/
+    bool Game::CollisionCheck(GameObject* obj_1, GameObject* obj_2) {
+        return glm::length(obj_1->GetPosition() - obj_2->GetPosition())
+               < obj_1->GetXRadius() + obj_2->GetXRadius();
+        /*
+        * note: this only considers the x-axis of the scale to calculate radius,
+        * which is okay for now, but will become a problem with non-uniform scaling.
+        */ 
     }
 
 
     /*** Handle the player explosion once health hits 0 ***/
     void Game::KillPlayer() {
+
         // Player Specific
         player->SetTexture(tex_[5]); // explosion texture
         player->SetRotation(0);
         player->SetScale(glm::vec2(2.5f));
         player->StartEraseTimer();
-        if (!am.SoundIsPlaying(boom_sfx)) {
-            am.PlaySound(boom_sfx); // do not play if an explosion is already playing
-        }
+        am.PlaySound(boom_sfx);
+
         // Game Specific
         close_window_timer.Start(6.0f);
         update_flag = false;
@@ -677,16 +756,12 @@ namespace game {
         // Set view to zoom out, centered by default at 0,0
         glm::mat4 camera_zoom_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(CAMERA_ZOOM, CAMERA_ZOOM, CAMERA_ZOOM));
 
-        // move the camera with the player
-        glm::mat4 camera_trans_matrix;
-        if (update_flag) {
-            camera_trans_matrix = glm::translate(glm::mat4(1.0f), -player->GetPosition());
-        }
-        else {
-            camera_trans_matrix = glm::translate(glm::mat4(1.0f), -player_last_pos);
-        }
+        // Move the camera
+        glm::mat4 camera_translation_matrix;
+        camera_translation_matrix = glm::translate(glm::mat4(1.0f), -camera_pos);
     
-        glm::mat4 view_matrix = window_scale_matrix * camera_zoom_matrix * camera_trans_matrix;
+        // Calculate the combined transformation matrix
+        glm::mat4 view_matrix = window_scale_matrix * camera_zoom_matrix * camera_translation_matrix;
 
 
         // Render all game objects
@@ -716,14 +791,17 @@ namespace game {
 
     /*** Load all the textures ***/
     void Game::LoadTextures(std::vector<std::string>& textures) {
+
         // Allocate a buffer for all texture references
         int num_textures = textures.size();
         tex_ = new GLuint[num_textures];
         glGenTextures(num_textures, tex_);
+
         // Load each texture
         for (int i = 0; i < num_textures; i++) {
             SetTexture(tex_[i], (resources_directory_g + textures[i]).c_str());
         }
+
         // Set first texture in the array as default
         glBindTexture(GL_TEXTURE_2D, tex_[0]);
     }
@@ -731,6 +809,7 @@ namespace game {
 
     /*** Set an objects texture ***/
     void Game::SetTexture(const GLuint& w, const char *fname) {
+
         // Bind texture buffer
         glBindTexture(GL_TEXTURE_2D, w);
 
@@ -743,7 +822,7 @@ namespace game {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
         SOIL_free_image_data(image);
 
-        // Texture Wrapping, now is tiled
+        // Texture Wrapping, Tiled
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
@@ -755,9 +834,12 @@ namespace game {
 
     /*** Print out the fps to the console (refactor later to display on-screen) ***/
     void Game::DisplayFPS(double dt) const {
-        float fps = std::floor(1 / dt);
-        if (fps > FPS_CAP) { fps = FPS_CAP; }
-        std::cout << "Current Fps: " << fps << std::endl;
+        // avoid dividing by 0 
+        if (dt > 0) {
+            float fps = std::floor(1 / dt);
+            if (FPS_CAP != 0 && fps > FPS_CAP) { fps = FPS_CAP; }
+            std::cout << "Current Fps: " << fps << std::endl;
+        }
     }
 
 

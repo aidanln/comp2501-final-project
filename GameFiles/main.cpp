@@ -34,6 +34,8 @@ int main(void) {
         the_game.Init();
         // Setup the game world (textures, game objects, etc.)
         the_game.SetupGameWorld();
+        // Show the intro screen, let the player settle in
+        the_game.PlayIntro();
         // Run the game
         the_game.MainLoop();
     }

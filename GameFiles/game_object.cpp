@@ -11,7 +11,7 @@ namespace game {
         : position_(position), geometry_(geom), shader_(shader), texture_(texture) {
         // default initializations
         scale_ = glm::vec2(1.0f);
-        angle_ = 0.0;
+        angle_ = 0.0f;
         velocity_ = glm::vec3(0.0f);
         acceleration_ = glm::vec3(0.0f);
         ghost_ = false;
@@ -69,7 +69,7 @@ namespace game {
 
     /*** Get the right side of an object ***/
     const glm::vec3& GameObject::GetRight(void) const {
-        float pi_over_two = glm::pi<float>() / 2.0f;
+        float pi_over_two = HALF_PI;
         glm::vec3 dir(cos(angle_ - pi_over_two), sin(angle_ - pi_over_two), 0.0);
         return dir;
     }
@@ -78,12 +78,33 @@ namespace game {
     /*** Rotation setter ***/
     void GameObject::SetRotation(float angle) { 
         // Set rotation angle for the object, ensure angle is in the range [0, 2*pi]
-        float two_pi = 2.0f*glm::pi<float>();
-        angle = fmod(angle, two_pi);
+        angle = fmod(angle, TWO_PI);
         if (angle < 0.0){
-            angle += two_pi;
+            angle += TWO_PI;
         }
         angle_ = angle;
+    }
+
+    
+    /*** Rotate based on linear interpolation, ensures smooth movement ***/
+    float GameObject::LerpAngle(float current, float target, float lerp_factor) {
+
+        // normalize angles to [0, 2pi] to ensure consistency
+        current = glm::mod(current, TWO_PI);
+        target = glm::mod(target, TWO_PI);
+
+        // figure out if we should rotate clockwise or counter-clockwise
+        float difference = target - current;
+        float alternate = difference - glm::sign(difference) * TWO_PI;
+
+        // Choose the smallest absolute difference (shortest path)
+        if (glm::abs(difference) > glm::abs(alternate)) {
+            difference = alternate;
+        }
+
+        // Interpolate and wrap the result
+        float result = current + difference * lerp_factor;
+        return glm::mod(result, TWO_PI);
     }
 
 
