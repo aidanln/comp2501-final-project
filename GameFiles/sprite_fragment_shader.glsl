@@ -22,11 +22,10 @@ void main()
     }
 
     // Assign color to fragment
-    gl_FragColor = vec4(color.r, color.g, color.b, color.a);
+    gl_FragColor = color;
 
     // Check for transparency
-    if(color.a < 1.0)
-    {
+    if (color.a < 1.0) {
          discard;
     }
 }

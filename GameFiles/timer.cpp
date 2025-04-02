@@ -17,7 +17,7 @@ namespace game {
 
 
     /*** Check if the timer has finished ***/
-    bool Timer::Finished(void) {
+    bool Timer::Finished(void) const {
         // if not running, return false
         if (!running_) {
             return false;
@@ -26,7 +26,6 @@ namespace game {
         // if running, check if end_time_ has been surpassed
         double current_time = glfwGetTime();
         if (current_time >= end_time_) {
-            running_ = false;
             return true;
         }
 

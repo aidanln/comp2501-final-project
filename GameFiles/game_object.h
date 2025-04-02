@@ -13,6 +13,7 @@
 #include "shader.h"
 #include "geometry.h"
 #include "timer.h"
+#include "defs.h"
 
 namespace game {
 
@@ -34,6 +35,8 @@ namespace game {
             // Getters
             inline const glm::vec3& GetPosition(void) const { return position_; }
             inline const glm::vec2& GetScale(void) const { return scale_; }
+            inline float GetXRadius(void) const { return scale_.x / 2; }
+            inline float GetYRadius(void) const { return scale_.y / 2; }
             inline const glm::vec3& GetVelocity(void) const { return velocity_; }
             inline const glm::vec3& GetAcceleration(void) const { return acceleration_; }
             inline bool IsGhost() const { return ghost_; }
@@ -49,6 +52,9 @@ namespace game {
             inline void SetAcceleration(const glm::vec3& acceleration) { acceleration_ = acceleration; }
             inline void SetGhost(bool ghost) { ghost_ = ghost; }
             void SetRotation(float angle);
+
+            // Linear Interpolation helper
+            float LerpAngle(float current, float target, float lerp_factor);
 
             // Timer handling
             virtual void StartEraseTimer(void); 

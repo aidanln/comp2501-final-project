@@ -49,6 +49,9 @@ namespace game {
         // Destroy the game world by freeing memory and shutting down the audio manager
         void DestroyGameWorld(void);
 
+        // Play an intro sequence with the title of the game appearing, allows the player to get ready
+        void PlayIntro(void);
+
         // Run the game (keep the game active) by defining a loop which we stay until the window closes
         void MainLoop(void);
 
@@ -57,7 +60,7 @@ namespace game {
             /* PRIVATE MEMBER FUNCTIONS */
 
         // Update the cursor tracker variable to be accurate each tick
-        void GetCursorPosition(void);
+        void UpdateCursorPosition(void);
 
         // Handle user input
         void HandleControls(double delta_time);
@@ -67,11 +70,11 @@ namespace game {
         
         // Enemy-Specific update helpers
         void EnemyCollisionCheck(EnemyGameObject* enemy);
-        void BulletCollisionCheck(EnemyGameObject* enemy, double delta_time);
         void ExplodeEnemy(EnemyGameObject* enemy);
 
-        // Player-specific collision detection
-        void PlayerBulletCollisionCheck(PlayerGameObject* player, double delta_time);
+        // Ray-Circle collision detection, checks against projectile arrays
+        void EnemyShotCheck(EnemyGameObject* enemy, double delta_time);
+        void PlayerShotCheck(double delta_time);
 
         // Collectible-Specific helpers
         void CollectItem(CollectibleGameObject* collectible);
@@ -79,11 +82,11 @@ namespace game {
         // Spawning of game objects
         void SpawnEnemy(void);
         void SpawnCollectible(void);
-        void SpawnBullet(void);
+        void SpawnPlayerBullet(void);
         void SpawnGunnerBullet(GunnerEnemy* gunner);
 
         // Helper methods
-        bool CollisionCheck(GameObject* obj_1, GameObject* obj_2, float dist);
+        bool CollisionCheck(GameObject* obj_1, GameObject* obj_2);
         void KillPlayer(void);
         void GameOver(void);
         
@@ -102,7 +105,8 @@ namespace game {
         // Helper method for fps, needed for performance monitoring
         void DisplayFPS(double delta_time) const;
 
-            /* MEMBER VARIABLES */
+
+            /* PRIVATE MEMBER VARIABLES */
 
         // Main window: pointer to the GLFW window structure
         GLFWwindow* window_;
@@ -129,15 +133,19 @@ namespace game {
         double current_time_;
 
         // Timers
-        Timer spawn_timer;
+        Timer intro_timer;
+        Timer enemy_spawn_timer;
         Timer collectible_timer;
-        Timer invincible_timer;
         Timer firing_cooldown;
         Timer close_window_timer;
 
-        // Audio Variables
+        // Audio Variables, should be callable 
         audio_manager::AudioManager am;
         int bg_music, game_start_sfx, boom_sfx, game_over_sfx, collect_sfx;
+
+        // Camera Attributes, needed for smooth movement
+        glm::vec3 camera_pos;
+        glm::vec3 camera_target_pos;
 
         // Flags
         bool update_flag;
@@ -145,7 +153,6 @@ namespace game {
         bool holding_shoot;
 
         // Trackers
-        glm::vec3 player_last_pos;
         glm::vec3 cursor_pos;
 
     }; // class Game
