@@ -38,7 +38,7 @@ namespace game {
 		/*** GameObject Spawning and Handling ***/
 
 	// Spawn-Related Flags and Timers
-	const bool RANDOM_SPAWNING = false;
+	const bool RANDOM_SPAWNING = true;
 	const float ENEMY_SPAWN_DELAY = 3.0f;
 	const float COLLECTIBLE_SPAWN_DELAY = 6.0f;
 
@@ -51,7 +51,6 @@ namespace game {
 
 	// Player general values
 	const unsigned short int PLAYER_INIT_HP = 100;
-	const unsigned short int PISTOL_INIT_DMG = 2;
 	const float PLAYER_ACCEL_FORCE = 20.0f;
 	const float PLAYER_MAX_SPEED = 4.2f;
 
@@ -60,13 +59,6 @@ namespace game {
 	const float REGEN_CD = 5.0f;
 	const float REGEN_STEP_CD = 1.0f;
 	const unsigned short int REGEN_AMOUNT = 10;
-
-	// Player projectile specific
-	const float PLAYER_SHOOT_CD = 0.2f;
-	const float PLAYER_BULLET_SPEED = 18.0f;
-	const float PLAYER_BULLET_LIFESPAN = 0.4f;
-	const float PLAYER_BULLET_SPREAD = 0.0f;
-	const bool PLAYER_SEMI_AUTO = false;
 
 
 
@@ -82,12 +74,12 @@ namespace game {
 	const float GUNNER_EVADE_DIST = 2.5f;
 
 	// Chaser
-	const unsigned short int CHASER_INIT_HP = 10;
+	const unsigned short int CHASER_INIT_HP = 15;
 	const unsigned short int CHASER_INIT_DMG = 20;
 	const float CHASER_SPEED = 2.5f;
 
 	// Kamikaze
-	const unsigned short int KAMIKAZE_INIT_HP = 3;
+	const unsigned short int KAMIKAZE_INIT_HP = 5;
 	const unsigned short int KAMIKAZE_INIT_DMG = 30;
 	const float KAMIKAZE_SPEED = 4.0f;
 	const float KAMIKAZE_LOCKON_DIST = 1.2f;
@@ -95,8 +87,43 @@ namespace game {
 	// Gunner projectile specific
 	const unsigned short int GUNNER_INIT_BULLET_DMG = 5;
 	const float GUNNER_SHOOT_CD = 1.2f;
-	const float GUNNER_BULLET_SPEED = 9.0f;
-	const float GUNNER_BULLET_LIFESPAN = 0.8f;
+	const float GUNNER_BULLET_SPEED = 12.0f;
+	const float GUNNER_BULLET_LIFESPAN = 1.0f;
+
+
+		/*** Unupgraded Weapon Attributes ***/
+
+	// Pistol
+	const unsigned short int PISTOL_DMG = 3;
+	const float PISTOL_SHOOT_CD = 0.2f;
+	const float PISTOL_LIFESPAN = 0.4f;
+	const float PISTOL_SPREAD = 0.15f;
+	const float PISTOL_SPEED = 16.0f;
+	const bool PISTOL_SEMI = true;
+
+	// SMG
+	const unsigned short int SMG_DMG = 5;
+	const float SMG_SHOOT_CD = 0.075f;
+	const float SMG_LIFESPAN = 0.3f;
+	const float SMG_SPREAD = 0.3f;
+	const float SMG_SPEED = 22.0f;
+	const bool SMG_SEMI = false;
+
+	// Rifle
+	const unsigned short int RIFLE_DMG = 9;
+	const float RIFLE_SHOOT_CD = 0.125f;
+	const float RIFLE_LIFESPAN = 0.5f;
+	const float RIFLE_SPREAD = 0.1f;
+	const float RIFLE_SPEED = 26.0f;
+	const bool RIFLE_SEMI = false;
+
+	// Sniper
+	const unsigned short int SNIPER_DMG = 30;
+	const float SNIPER_SHOOT_CD = 0.8f;
+	const float SNIPER_LIFESPAN = 0.7f;
+	const float SNIPER_SPREAD = 0.01f;
+	const float SNIPER_SPEED = 35.0f;
+	const bool SNIPER_SEMI = true;
 }
 
 #endif

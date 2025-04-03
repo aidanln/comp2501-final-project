@@ -18,6 +18,7 @@ namespace game {
     class Weapon {
 
     public:
+        // constructor
         Weapon(int damage, float firing_cooldown, float bullet_lifespan, float bullet_spread, float bullet_speed, bool semi_auto);
 
         // Damage Handlers

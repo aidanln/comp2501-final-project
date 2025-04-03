@@ -101,7 +101,7 @@ namespace game {
         // Start all the Timers
         enemy_spawn_timer.Start(ENEMY_SPAWN_DELAY);
         collectible_timer.Start(COLLECTIBLE_SPAWN_DELAY);
-        firing_cooldown.Start(PLAYER_SHOOT_CD);
+        firing_cooldown.Start(PISTOL_SHOOT_CD);
 
         // Initialize default member variables
         update_flag = false;
@@ -147,6 +147,26 @@ namespace game {
             filename = std::string(resources_directory_g).append("/audio/collect.wav");
             collect_sfx = am.AddSound(filename.c_str());
             am.SetSoundPosition(collect_sfx, 0.0, 0.0, 0.0);
+            
+            // Setup the player hit sound
+            filename = std::string(resources_directory_g).append("/audio/player_hit.wav");
+            player_hit_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(player_hit_sfx, 0.0, 0.0, 0.0);
+
+            // Setup the player shoot sound
+            filename = std::string(resources_directory_g).append("/audio/player_shoot.wav");
+            player_shoot_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(player_shoot_sfx, 0.0, 0.0, 0.0);
+
+            // Setup the enemy hit sound
+            filename = std::string(resources_directory_g).append("/audio/enemy_hit.wav");
+            enemy_hit_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(enemy_hit_sfx, 0.0, 0.0, 0.0);
+
+            // Setup the enemy shoot sound
+            filename = std::string(resources_directory_g).append("/audio/enemy_shoot.wav");
+            enemy_shoot_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(enemy_shoot_sfx, 0.0, 0.0, 0.0);
         }
 
         // Error handling
@@ -200,11 +220,13 @@ namespace game {
         background = new GameObject(glm::vec3(0.0f, 0.0f, 0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(30.0f));
 
-        // Weapons
-        pistol = new Weapon(PISTOL_INIT_DMG, PLAYER_SHOOT_CD, PLAYER_BULLET_LIFESPAN, PLAYER_BULLET_SPREAD, PLAYER_BULLET_SPEED, PLAYER_SEMI_AUTO);
-        smg = new Weapon(4, 0.08f, 0.2f, 0.25f, 20.0f, false);
-        rifle = new Weapon(10, 0.125f, 0.5f, 0.2f, 25.0f, false);
-        sniper = new Weapon(30, 0.8f, 1.5f, 0.0f, 40.0f, true);
+        // Define all the Weapons
+        pistol  = new Weapon(PISTOL_DMG, PISTOL_SHOOT_CD, PISTOL_LIFESPAN, PISTOL_SPREAD, PISTOL_SPEED, PISTOL_SEMI);
+        smg     = new Weapon(SMG_DMG, SMG_SHOOT_CD, SMG_LIFESPAN, SMG_SPREAD, SMG_SPEED, SMG_SEMI);
+        rifle   = new Weapon(RIFLE_DMG, RIFLE_SHOOT_CD, RIFLE_LIFESPAN, RIFLE_SPREAD, RIFLE_SPEED, RIFLE_SEMI);
+        sniper  = new Weapon(SNIPER_DMG, SNIPER_SHOOT_CD, SNIPER_LIFESPAN, SNIPER_SPREAD, SNIPER_SPEED, SNIPER_SEMI);
+
+        // Pistol is the default weapon
         player->SetWeapon(pistol);
     }
 
@@ -234,6 +256,12 @@ namespace game {
         for (int i = 0; i < collectible_arr.size(); ++i) {
             delete collectible_arr[i];
         }
+
+        // delete weapons
+        delete pistol;
+        delete smg;
+        delete rifle;
+        delete sniper;
 
         // shut down audio manager
         am.ShutDown();
@@ -529,6 +557,7 @@ namespace game {
         if (CollisionCheck(player, enemy)) {
             enemy->TakeDamage(enemy->GetHealth());
             player->TakeDamage(enemy->GetDamage());
+            am.PlaySound(player_hit_sfx);
         }
     }
 
@@ -556,27 +585,10 @@ namespace game {
                 ProjectileGameObject* bullet = projectile_arr[i];
                 float collision_dist = enemy->GetXRadius() + BULLET_RADIUS;
 
-                // perform ray-circle check via quadratic formula re-arrange
-                glm::vec3 origin_to_center = bullet->GetOrigin() - enemy->GetPosition();
-                float a = glm::dot(bullet->GetVelocity(), bullet->GetVelocity());
-                float b = 2.0f * glm::dot(origin_to_center, bullet->GetVelocity());
-                float c = glm::dot(origin_to_center, origin_to_center) - collision_dist * collision_dist;
-
-                // if discriminant is greater/equal zero, we have a collision
-                float discriminant = b * b - 4 * a * c;
-                if (discriminant >= 0) {
-
-                    // compute intersection points and check with the bullet's lifespan to confirm collision
-                    float t1 = (-b - glm::sqrt(discriminant)) / (2.0f * a);
-                    float t2 = (-b + glm::sqrt(discriminant)) / (2.0f * a);
-                    float lifespan = bullet->GetLifespan();
-                    if (t1 <= lifespan && lifespan <= t2) {
-
-                        // collision confirmed, handle it
-                        bullet->ImpactOccured();
-                        bullet->Hide();
-                        enemy->TakeDamage(bullet->GetDamage());
-                    }
+                // check for ray-circle collision
+                if (RayCircleCheck(bullet, enemy, collision_dist)) {
+                    enemy->TakeDamage(bullet->GetDamage());
+                    am.PlaySound(enemy_hit_sfx);
                 }
             }
         }
@@ -592,27 +604,10 @@ namespace game {
             if (!gunner_projectile_arr[i]->GetImpact()) {
                 ProjectileGameObject* bullet = gunner_projectile_arr[i];
 
-                // perform ray-circle check via quadratic formula re-arrange
-                glm::vec3 origin_to_center = bullet->GetOrigin() - player->GetPosition();
-                float a = glm::dot(bullet->GetVelocity(), bullet->GetVelocity());
-                float b = 2.0f * glm::dot(origin_to_center, bullet->GetVelocity());
-                float c = glm::dot(origin_to_center, origin_to_center) - collision_dist * collision_dist;
-
-                // if discriminant is greater/equal zero, we have a collision
-                float discriminant = b * b - 4 * a * c;
-                if (discriminant >= 0) {
-
-                    // compute intersection points and check with the bullet's lifespan to confirm collision
-                    float t1 = (-b - glm::sqrt(discriminant)) / (2.0f * a);
-                    float t2 = (-b + glm::sqrt(discriminant)) / (2.0f * a);
-                    float lifespan = bullet->GetLifespan();
-                    if (t1 <= lifespan && lifespan <= t2) {
-
-                        // collision confirmed, handle it
-                        bullet->ImpactOccured();
-                        bullet->Hide();
-                        player->TakeDamage(bullet->GetDamage());
-                    }
+                // check for ray-circle collision
+                if (RayCircleCheck(bullet, player, collision_dist)) {
+                    player->TakeDamage(bullet->GetDamage());
+                    am.PlaySound(player_hit_sfx);
                 }
             }
         }
@@ -674,32 +669,36 @@ namespace game {
     /*** Spawn a bullet at the player's position with a velocity/rotation corresponding to the player's ***/
     void Game::SpawnPlayerBullet(void) {
 
+        // pre-define the weapon to reduce calls
+        Weapon* weapon = player->GetWeapon();
+
         // create the bullet object and add to collection
-        ProjectileGameObject* bullet = new ProjectileGameObject(player->GetPosition(), sprite_, &sprite_shader_,
-                                                                tex_[7], player->GetWeapon()->GetBulletLifespan(), player->GetWeapon()->GetDamage());
+        ProjectileGameObject* bullet = new ProjectileGameObject(
+            player->GetPosition(), sprite_, &sprite_shader_, tex_[7], weapon->GetBulletLifespan(), weapon->GetDamage()
+        );
         projectile_arr.push_back(bullet);
         bullet->StartEraseTimer();
 
-        // random gen for bullet spread
+        // randomly generate spread based on the weapon's bullet spread member var
         std::random_device rd;
         std::mt19937 gen(rd());
-        float spread = player->GetWeapon()->GetBulletSpread();
+        float spread = weapon->GetBulletSpread();
         std::uniform_real_distribution<> dis_spread(-spread, spread);
-
         float random_spread;
         random_spread = dis_spread(gen);
 
-        // Calculate direction
+        // calculate bullet direction with the spread offset
         glm::vec3 direction = glm::normalize(cursor_pos);
         float base_angle = atan2(direction.y, direction.x);
         float spread_angle = base_angle + random_spread;
         glm::vec3 spread_direction = glm::vec3(cos(spread_angle), sin(spread_angle), 0);
 
-        // Apply velocity with spread
-        bullet->SetVelocity(spread_direction * player->GetWeapon()->GetBulletSpeed());
-
-        // Apply rotation with spread
+        // apply the properties to the bullet
+        bullet->SetVelocity(spread_direction * weapon->GetBulletSpeed());
         bullet->SetRotation(spread_angle - HALF_PI);
+
+        // play the corresponding sound effect
+        am.PlaySound(player_shoot_sfx);
     }
 
 
@@ -707,8 +706,9 @@ namespace game {
     void Game::SpawnGunnerBullet(GunnerEnemy* gunner) {
 
         // create the bullet object and add to collection
-        ProjectileGameObject* bullet = new ProjectileGameObject(gunner->GetPosition(), sprite_, &sprite_shader_,
-                                                                tex_[7], GUNNER_BULLET_LIFESPAN, gunner->GetBulletDamage());
+        ProjectileGameObject* bullet = new ProjectileGameObject(
+            gunner->GetPosition(), sprite_, &sprite_shader_, tex_[7], GUNNER_BULLET_LIFESPAN, gunner->GetBulletDamage()
+        );
         gunner_projectile_arr.push_back(bullet);
         bullet->StartEraseTimer();
 
@@ -716,17 +716,47 @@ namespace game {
         glm::vec3 aim_line = player->GetPosition() - gunner->GetPosition();
         bullet->SetVelocity(glm::normalize(aim_line) * GUNNER_BULLET_SPEED);
         bullet->SetRotation(atan2(aim_line.y, aim_line.x) - (HALF_PI));
+
+        // play the corresponding sound effect
+        am.PlaySound(enemy_shoot_sfx);
     }
 
 
-    /*** Handle Circle-Circle collision checking ***/
+    /*** Handle Circle-Circle collision checking, only considers radius in the x-axis ***/
     bool Game::CollisionCheck(GameObject* obj_1, GameObject* obj_2) {
         return glm::length(obj_1->GetPosition() - obj_2->GetPosition())
                < obj_1->GetXRadius() + obj_2->GetXRadius();
-        /*
-        * note: this only considers the x-axis of the scale to calculate radius,
-        * which is okay for now, but will become a problem with non-uniform scaling.
-        */ 
+    }
+
+
+    /*** Return true if a Ray-Circle collision is found between a projectile and game object, false otherwise ***/
+    bool Game::RayCircleCheck(ProjectileGameObject* bullet, GameObject* obj, float col_dist) {
+
+        // perform ray-circle check via quadratic formula re-arrange
+        glm::vec3 origin_to_center = bullet->GetOrigin() - obj->GetPosition();
+        float a = glm::dot(bullet->GetVelocity(), bullet->GetVelocity());
+        float b = 2.0f * glm::dot(origin_to_center, bullet->GetVelocity());
+        float c = glm::dot(origin_to_center, origin_to_center) - col_dist * col_dist;
+
+        // if discriminant is greater/equal zero, we have a collision
+        float discriminant = b * b - 4 * a * c;
+        if (discriminant >= 0) {
+
+            // compute intersection points and check with the bullet's lifespan to confirm collision
+            float t1 = (-b - glm::sqrt(discriminant)) / (2.0f * a);
+            float t2 = (-b + glm::sqrt(discriminant)) / (2.0f * a);
+            float lifespan = bullet->GetLifespan();
+            if (t1 <= lifespan && lifespan <= t2) {
+
+                // collision confirmed, handle it, then return true
+                bullet->ImpactOccured();
+                bullet->Hide();
+                return true;
+            }
+        }
+
+        // base case, no collision found
+        return false;
     }
 
 

@@ -33,10 +33,10 @@ namespace game {
         inline void SetWeapon(Weapon* w) { weapon = w; }
 
     private:
+        // Health trackers
         unsigned short int health;
         unsigned short int max_health;
         
-
         // Timers for handling player health
         Timer i_frames_timer;
         Timer regen_cd;

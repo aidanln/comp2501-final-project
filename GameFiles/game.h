@@ -73,7 +73,7 @@ namespace game {
         void EnemyCollisionCheck(EnemyGameObject* enemy);
         void ExplodeEnemy(EnemyGameObject* enemy);
 
-        // Ray-Circle collision detection, checks against projectile arrays
+        // Check against projectile arrays for ray-circle collision
         void EnemyShotCheck(EnemyGameObject* enemy, double delta_time);
         void PlayerShotCheck(double delta_time);
 
@@ -88,6 +88,7 @@ namespace game {
 
         // Helper methods
         bool CollisionCheck(GameObject* obj_1, GameObject* obj_2);
+        bool RayCircleCheck(ProjectileGameObject* bullet, GameObject* obj, float col_dist);
         void KillPlayer(void);
         void GameOver(void);
         
@@ -142,7 +143,8 @@ namespace game {
 
         // Audio Variables, should be callable 
         audio_manager::AudioManager am;
-        int bg_music, game_start_sfx, boom_sfx, game_over_sfx, collect_sfx;
+        int bg_music, game_start_sfx, boom_sfx, game_over_sfx, collect_sfx,
+            player_hit_sfx, player_shoot_sfx, enemy_hit_sfx, enemy_shoot_sfx;
 
         // Camera Attributes, needed for smooth movement
         glm::vec3 camera_pos;
