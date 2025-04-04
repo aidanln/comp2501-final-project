@@ -125,6 +125,23 @@ namespace audio_manager {
     }
 
 
+    /*** Stop a sound by index ***/
+    void AudioManager::StopSound(int index) {
+
+        // Stop source
+        ALint source_state;
+        alGetSourcei(source_[index], AL_SOURCE_STATE, &source_state);
+        if (source_state == AL_PLAYING || source_state == AL_PAUSED) {
+            alSourceStop(source_[index]);
+            CheckForErrors("Failed to stop source");
+        }
+
+        // Associate buffer to source
+        alSourcei(source_[index], AL_BUFFER, buffer_[index]);
+        CheckForErrors("Failed to bind buffer");
+    }
+
+
     /*** Check if the sound at the param index is currently playing ***/
     bool AudioManager::SoundIsPlaying(int index) {
         ALint source_state;

@@ -11,6 +11,7 @@ set(HDRS
     defs.h
     derived_enemy_objects.h
     enemy_game_object.h
+    enemy_spawn.h
     file_utils.h
     game.h
     game_object.h
@@ -28,6 +29,7 @@ set(SRCS
     collectible_game_object.cpp
     derived_enemy_objects.cpp
     enemy_game_object.cpp
+    enemy_spawn.cpp
     file_utils.cpp
     game.cpp
     game_object.cpp

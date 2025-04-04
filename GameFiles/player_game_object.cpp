@@ -11,7 +11,6 @@ namespace game {
 		// initialize default values
 		health = PLAYER_INIT_HP;
 		max_health = health;
-		collectible_count = 0;
 		angle_ = 0;
 		target_angle = 0;
 		
@@ -58,6 +57,12 @@ namespace game {
 				std::cout << "Player HP: " << health << " -> Regenerated " << REGEN_AMOUNT << " Health." << std::endl;
 			}
 		}
+	}
+
+
+	/*** Longer erase timer, as this only plays during a game over ***/
+	void PlayerGameObject::StartEraseTimer(void) {
+		erase_timer_.Start(5.0f);
 	}
 
 

@@ -100,7 +100,6 @@ namespace game {
 
         // Start all the Timers
         enemy_spawn_timer.Start(ENEMY_SPAWN_DELAY);
-        collectible_timer.Start(COLLECTIBLE_SPAWN_DELAY);
         firing_cooldown.Start(PISTOL_SHOOT_CD);
 
         // Initialize default member variables
@@ -109,6 +108,7 @@ namespace game {
         camera_pos = glm::vec3(0.0f);
         camera_target_pos = glm::vec3(0.0f);
         cursor_pos = glm::vec3(0.0f);
+        spawn_index = 0;
 
         // Audio Setup
         InitAudio();
@@ -126,7 +126,7 @@ namespace game {
             std::string filename = std::string(resources_directory_g).append("/audio/bg_music.wav");
             bg_music = am.AddSound(filename.c_str());
             am.SetSoundPosition(bg_music, 0.0, 0.0, 0.0); // sound properties
-            am.SetLoop(bg_music, true); // loop until program ends
+            am.SetLoop(bg_music, true);
 
             // Setup the game starting sound
             filename = std::string(resources_directory_g).append("/audio/game_start.wav");
@@ -144,10 +144,15 @@ namespace game {
             am.SetSoundPosition(game_over_sfx, 0.0, 0.0, 0.0);
 
             // Setup the collect sound
-            filename = std::string(resources_directory_g).append("/audio/collect.wav");
+            filename = std::string(resources_directory_g).append("/audio/collect_power_up.wav");
             collect_sfx = am.AddSound(filename.c_str());
             am.SetSoundPosition(collect_sfx, 0.0, 0.0, 0.0);
-            
+
+            // Setup the ambience played by power ups
+            filename = std::string(resources_directory_g).append("/audio/power_up_loop.wav");
+            power_up_ambience = am.AddSound(filename.c_str());
+            am.SetSoundPosition(power_up_ambience, 0.0, 0.0, 0.0);
+
             // Setup the player hit sound
             filename = std::string(resources_directory_g).append("/audio/player_hit.wav");
             player_hit_sfx = am.AddSound(filename.c_str());
@@ -196,7 +201,7 @@ namespace game {
         textures.push_back("/textures/gunner_ship.png");    // 1, tex_gunner
         textures.push_back("/textures/chaser_ship.png");    // 2, tex_chaser
         textures.push_back("/textures/kamikaze_ship.png");  // 3, tex_kamikaze
-        textures.push_back("/textures/background.png");     // 4, tex_stats
+        textures.push_back("/textures/background.png");     // 4, tex_stars
         textures.push_back("/textures/explosion.png");      // 5, tex_explosion
         textures.push_back("/textures/collectible.png");    // 6, tex_collectible
         textures.push_back("/textures/bullet.png");         // 7, tex_bullet
@@ -206,25 +211,36 @@ namespace game {
         // Setup the player object (position, texture, vertex count)
         player = new PlayerGameObject(glm::vec3(0.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_player]);
 
-        // Setup starter enemies
-        enemy_arr.push_back(new GunnerEnemy(glm::vec3(-4.0f, -2.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_gunner]));
-        enemy_arr.push_back(new ChaserEnemy(glm::vec3(4.0f, -2.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_chaser]));
-        enemy_arr.push_back(new KamikazeEnemy(glm::vec3(0.0f, -4.5f, 0.0f), sprite_, &sprite_shader_, tex_[tex_kamikaze]));
+        // Setup 8 enemy spawn points on the outside of the map (represented by portal sprites)
+        // right-side
+        enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(16.0f, -9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
+        enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(16.0f, 9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
+        // top-side
+        enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(9.0f, 16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
+        enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(-9.0f, 16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
+        // left-side
+        enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(-16.0f, 9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
+        enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(-16.0f, -9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
+        // bottom-side
+        enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(-9.0f, -16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
+        enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(9.0f, -16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
 
         // Setup starter collectibles
-        collectible_arr.push_back(new CollectibleGameObject(glm::vec3(-2.0f, 2.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_collectible]));
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_collectible]));
-        collectible_arr.push_back(new CollectibleGameObject(glm::vec3(2.0f, 2.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_collectible]));
 
         // Setup background
         background = new GameObject(glm::vec3(0.0f, 0.0f, 0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
-        background->SetScale(glm::vec2(30.0f));
+        background->SetScale(glm::vec2(WORLD_SIZE));
 
         // Define all the Weapons
-        pistol  = new Weapon(PISTOL_DMG, PISTOL_SHOOT_CD, PISTOL_LIFESPAN, PISTOL_SPREAD, PISTOL_SPEED, PISTOL_SEMI);
-        smg     = new Weapon(SMG_DMG, SMG_SHOOT_CD, SMG_LIFESPAN, SMG_SPREAD, SMG_SPEED, SMG_SEMI);
-        rifle   = new Weapon(RIFLE_DMG, RIFLE_SHOOT_CD, RIFLE_LIFESPAN, RIFLE_SPREAD, RIFLE_SPEED, RIFLE_SEMI);
-        sniper  = new Weapon(SNIPER_DMG, SNIPER_SHOOT_CD, SNIPER_LIFESPAN, SNIPER_SPREAD, SNIPER_SPEED, SNIPER_SEMI);
+        pistol  = new Weapon
+        (PISTOL_DMG,    PISTOL_SHOOT_CD,    PISTOL_LIFESPAN,    PISTOL_SPREAD,  PISTOL_SPEED,   PISTOL_SEMI);
+        smg     = new Weapon
+        (SMG_DMG,       SMG_SHOOT_CD,       SMG_LIFESPAN,       SMG_SPREAD,     SMG_SPEED,      SMG_SEMI   );
+        rifle   = new Weapon
+        (RIFLE_DMG,     RIFLE_SHOOT_CD,     RIFLE_LIFESPAN,     RIFLE_SPREAD,   RIFLE_SPEED,    RIFLE_SEMI );
+        sniper  = new Weapon
+        (SNIPER_DMG,    SNIPER_SHOOT_CD,    SNIPER_LIFESPAN,    SNIPER_SPREAD,  SNIPER_SPEED,   SNIPER_SEMI);
 
         // Pistol is the default weapon
         player->SetWeapon(pistol);
@@ -255,6 +271,11 @@ namespace game {
         // delete collectibles
         for (int i = 0; i < collectible_arr.size(); ++i) {
             delete collectible_arr[i];
+        }
+
+        // delete enemy spawns
+        for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
+            delete enemy_spawn_arr[i];
         }
 
         // delete weapons
@@ -327,15 +348,11 @@ namespace game {
             // Update all the game objects
             Update(delta_time);
 
-            // Check if timers are finished, unless a game over occurs
-            if (update_flag && RANDOM_SPAWNING) {
+            // Spawn Enemies
+            if (update_flag && enemy_arr.size() < MAX_ENEMIES) {
                 if (enemy_spawn_timer.Finished()) {
                     SpawnEnemy();
                     enemy_spawn_timer.Start(ENEMY_SPAWN_DELAY);
-                }
-                if (collectible_timer.Finished()) {
-                    SpawnCollectible();
-                    collectible_timer.Start(COLLECTIBLE_SPAWN_DELAY);
                 }
             }
 
@@ -462,9 +479,12 @@ namespace game {
     /*** Update all the game objects ***/
     void Game::Update(double delta_time) {
 
-        // Update the Camera Position
-        camera_target_pos = player->GetPosition();
-        camera_pos = glm::mix(camera_pos, camera_target_pos, CAMERA_SMOOTHNESS); // ensures smooth movement
+        // Pre-def, little optimization
+        glm::vec3 player_pos = player->GetPosition();
+
+        // Update the Camera
+        camera_target_pos = player_pos;
+        camera_pos = glm::mix(camera_pos, camera_target_pos, CAMERA_SMOOTHNESS);
 
         // Update the Player
         if (update_flag) {
@@ -545,9 +565,19 @@ namespace game {
                 collectible_arr.erase(collectible_arr.begin() + i);
                 delete collectible;
             }
-            else if (CollisionCheck(player, collectible) && !collectible->IsCollected()) {
-                CollectItem(collectible);
+
+            else if (!collectible->IsCollected()) {
+                collectible->Update(delta_time);
+
+                if (CollisionCheck(player, collectible)) {
+                    CollectItem(collectible);
+                }
             }
+        }
+
+        // Update enemy portals (just visuals)
+        for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
+            enemy_spawn_arr[i]->Update(delta_time);
         }
     }
 
@@ -565,7 +595,7 @@ namespace game {
     /*** Explode an enemy game object ***/
     void Game::ExplodeEnemy(EnemyGameObject* enemy) {
 
-        // replace destroyer sprite with an explosion, prepare for deletion via erase timer
+        // change enemy properties to show it has exploded
         enemy->Explode();
         enemy->SetTexture(tex_[5]); // explosion texture
         enemy->SetScale(glm::vec2(1.8f));
@@ -573,6 +603,15 @@ namespace game {
 
         // play explosion sound
         am.PlaySound(boom_sfx);
+
+        // use RNG to decide if a power-up should spawn
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(0.0f, 1.0f);
+
+        // spawn if RNG gives a number less than the spawn chance
+        if (dis(gen) <= POWER_UP_SPAWN_CHANCE) {
+            SpawnCollectible(enemy);
+        }
     }
 
 
@@ -616,53 +655,69 @@ namespace game {
 
     /*** Handle collecting a collectible ***/
     void Game::CollectItem(CollectibleGameObject* collectible) {
-        player->IncrementCollectibleCount();
         collectible->Collect();
         am.PlaySound(collect_sfx);
+        am.StopSound(power_up_ambience);
     }
 
 
     /*** Spawn a destroyer in a random position on screen, triggered via timer (6 seconds) ***/
     void Game::SpawnEnemy(void) {
-        // TEMPORARY, WILL BE REFACTORED ONCE ENEMY SPAWNS ARE ADDED
+        // TEMPORARY IMPLEMENTATION, WILL BE REFACTORED ONCE WAVES ARE ADDED
 
-        // Random Number Generator
-        std::random_device rd;
+        // generate a random number for choosing the enemy to be spawned
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<> dis_x(-6.0f, 6.0f);
-        std::uniform_real_distribution<> dis_y(-4.0f, 4.0f);
+        std::uniform_real_distribution<> temp_dis(1.0f, 3.99f);
+        int random_enemy_index = floor(temp_dis(gen));
 
-        // generate the x and y coordinates, must be a certain distance from the player
-        glm::vec3 rand_pos(0.0f);
-        while (glm::length(rand_pos) < 3.0f) {
-            rand_pos.x = dis_x(gen);
-            rand_pos.y = dis_y(gen);
+        // get coordinates for the spawn based on spawn portals
+        glm::vec3 spawn_pos = enemy_spawn_arr[spawn_index]->GetPosition();
+
+        // increment spawn_index to specify the next portal
+        spawn_index++;
+
+        // index should never exceed 7 as this would cause vector OOB errors
+        if (spawn_index > 7) {
+            spawn_index = 0;
         }
-
-        // add a new enemy at the random position (ALWAYS GUNNER RN, CHANGE LATER)
-        enemy_arr.push_back(new GunnerEnemy(rand_pos, sprite_, &sprite_shader_, tex_[1]));
+        
+        // use the RNG section above to determine which enemy to spawn
+        switch (random_enemy_index) {
+        case 1:
+            enemy_arr.push_back(new GunnerEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[1]));
+            break;
+        case 2:
+            enemy_arr.push_back(new ChaserEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[2]));
+            break;
+        case 3:
+            enemy_arr.push_back(new KamikazeEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[3]));
+            break;
+        default:
+            // should never reach here, so we error if it does
+            std::cerr << "Error: RNG not properly spawning enemies." << std::endl;
+        }
     }
 
 
-    /*** Spawn a collectible in a random position on screen, triggered via timer(8 seconds) ***/
-    void Game::SpawnCollectible(void) {
-        // TEMPORARY, WILL BE REMOVED ONCE POWER-UPS ARE ADDED
+    /*** Spawn a collectible, occasionally called when killing an enemy, spawns on their explosion ***/
+    void Game::SpawnCollectible(EnemyGameObject* enemy) {
 
-        // Random Number Generator
-        std::random_device rd;
+        // use RNG for setting random velocity, will be refactored to choose a random power-up later
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<> dis_x(-7.0f, 7.0f);
-        std::uniform_real_distribution<> dis_y(-4.6f, 4.6f);
+        std::uniform_real_distribution<> dis(0.0f, TWO_PI);
+        float velocity_angle = dis(gen);
 
-        // generate the x and y coordinates, must be a certain distance from the player
-        glm::vec3 rand_pos(0.0f);
-        while (glm::length(rand_pos) < 3.0f) {
-            rand_pos.x = dis_x(gen);
-            rand_pos.y = dis_y(gen);
-        }
+        // setup the new collectible
+        CollectibleGameObject* power_up = new CollectibleGameObject(
+            enemy->GetPosition(), sprite_, &sprite_shader_, tex_[6]
+        );
+        collectible_arr.push_back(power_up);
 
-        // add a new collectible at the random position
-        collectible_arr.push_back(new CollectibleGameObject(rand_pos, sprite_, &sprite_shader_, tex_[6]));
+        // give the collectible random velocity
+        power_up->SetVelocity(glm::vec3(cos(velocity_angle), sin(velocity_angle), 0.0f));
+
+        // play an ambient sound to indicate the power-up has spawned
+        am.PlaySound(power_up_ambience);
     }
 
 
@@ -677,15 +732,13 @@ namespace game {
             player->GetPosition(), sprite_, &sprite_shader_, tex_[7], weapon->GetBulletLifespan(), weapon->GetDamage()
         );
         projectile_arr.push_back(bullet);
-        bullet->StartEraseTimer();
 
         // randomly generate spread based on the weapon's bullet spread member var
         std::random_device rd;
         std::mt19937 gen(rd());
         float spread = weapon->GetBulletSpread();
         std::uniform_real_distribution<> dis_spread(-spread, spread);
-        float random_spread;
-        random_spread = dis_spread(gen);
+        float random_spread = dis_spread(gen);
 
         // calculate bullet direction with the spread offset
         glm::vec3 direction = glm::normalize(cursor_pos);
@@ -710,7 +763,6 @@ namespace game {
             gunner->GetPosition(), sprite_, &sprite_shader_, tex_[7], GUNNER_BULLET_LIFESPAN, gunner->GetBulletDamage()
         );
         gunner_projectile_arr.push_back(bullet);
-        bullet->StartEraseTimer();
 
         // set appropriate physical properties
         glm::vec3 aim_line = player->GetPosition() - gunner->GetPosition();
@@ -745,7 +797,7 @@ namespace game {
             // compute intersection points and check with the bullet's lifespan to confirm collision
             float t1 = (-b - glm::sqrt(discriminant)) / (2.0f * a);
             float t2 = (-b + glm::sqrt(discriminant)) / (2.0f * a);
-            float lifespan = bullet->GetLifespan();
+            float lifespan = bullet->GetBulletTimeElapsed();
             if (t1 <= lifespan && lifespan <= t2) {
 
                 // collision confirmed, handle it, then return true
@@ -821,14 +873,17 @@ namespace game {
         for (int i = 0; i < enemy_arr.size(); i++) {
             enemy_arr[i]->Render(view_matrix, current_time_);
         }
-        for (int i = 0; i < projectile_arr.size(); i++) {
-            projectile_arr[i]->Render(view_matrix, current_time_);
-        }
         for (int i = 0; i < collectible_arr.size(); i++) {
             collectible_arr[i]->Render(view_matrix, current_time_);
         }
+        for (int i = 0; i < projectile_arr.size(); i++) {
+            projectile_arr[i]->Render(view_matrix, current_time_);
+        }
         for (int i = 0; i < gunner_projectile_arr.size(); i++) {
             gunner_projectile_arr[i]->Render(view_matrix, current_time_);
+        }
+        for (int i = 0; i < enemy_spawn_arr.size(); i++) {
+            enemy_spawn_arr[i]->Render(view_matrix, current_time_);
         }
         background->Render(view_matrix, current_time_);
     }

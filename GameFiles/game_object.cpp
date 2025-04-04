@@ -108,15 +108,15 @@ namespace game {
     }
 
 
-    /*** Checks if the erase timer has finished ***/
-    bool GameObject::EraseTimerCheck() {
-        return erase_timer_.Finished();
+    /*** Base Erase Timer initalizer, defaults to 5 seconds ***/
+    void GameObject::StartEraseTimer() {
+        erase_timer_.Start(DEFAULT_ERASE_TIMER);
     }
 
 
-    /*** Base Erase Timer initalizer, defaults to 5 seconds ***/
-    void GameObject::StartEraseTimer() {
-        erase_timer_.Start(5.0f);
+    /*** Checks if the erase timer has finished ***/
+    bool GameObject::EraseTimerCheck() {
+        return erase_timer_.Finished();
     }
 
 } // namespace game

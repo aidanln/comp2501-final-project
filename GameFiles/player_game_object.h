@@ -15,27 +15,27 @@ namespace game {
         // Constructor
         PlayerGameObject(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture);
 
-        // Update function for moving the player object around
+        // Overriden Update function for moving the player object around
         void Update(double delta_time) override;
+
+        // Overriden EraseTimer handler, takes longer than the default
+        void StartEraseTimer(void) override;
 
         // Update the target angle, allows for cursor-based rotation
         inline void UpdateTargetAngle(float ta) { target_angle = ta; }
-
+        
         // Health handlers
         inline unsigned short int GetHealth(void) const { return health; }
         void TakeDamage(int recieved_dmg);
 
-        // TEMPORARY, collectible handlers
-        inline unsigned short int GetCollectibleCount(void) const { return collectible_count; }
-        inline void IncrementCollectibleCount(void) { collectible_count++; }
-
+        // Weapon handlers
         inline Weapon* GetWeapon() { return weapon; }
         inline void SetWeapon(Weapon* w) { weapon = w; }
 
     private:
         // Health trackers
-        unsigned short int health;
-        unsigned short int max_health;
+        short int health;
+        short int max_health;
         
         // Timers for handling player health
         Timer i_frames_timer;
@@ -44,9 +44,6 @@ namespace game {
 
         // Intended angle, GameObject::angle_ uses linear interpolation to reach this
         float target_angle;
-
-        // TEMPORARY, amount of collectibles the player has
-        unsigned short int collectible_count;
 
         // i need more bullets
         Weapon* weapon;
