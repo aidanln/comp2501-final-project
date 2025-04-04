@@ -193,19 +193,23 @@ namespace game {
             tex_kamikaze = 3,
             tex_stars = 4,
             tex_explosion = 5,
-            tex_collectible = 6,
-            tex_bullet = 7,
-            tex_portal = 8
+            tex_bullet = 6,
+            tex_portal = 7,
+            tex_double_points = 8,
+            tex_bullet_boost = 9,
+            tex_cold_shock = 10
         };
-        textures.push_back("/textures/player_ship.png");    // 0, tex_player
-        textures.push_back("/textures/gunner_ship.png");    // 1, tex_gunner
-        textures.push_back("/textures/chaser_ship.png");    // 2, tex_chaser
-        textures.push_back("/textures/kamikaze_ship.png");  // 3, tex_kamikaze
-        textures.push_back("/textures/background.png");     // 4, tex_stars
-        textures.push_back("/textures/explosion.png");      // 5, tex_explosion
-        textures.push_back("/textures/collectible.png");    // 6, tex_collectible
-        textures.push_back("/textures/bullet.png");         // 7, tex_bullet
-        textures.push_back("/textures/enemy_spawn.png");    // 8, tex_portal
+        textures.push_back("/textures/player_ship.png");    // 0,  tex_player
+        textures.push_back("/textures/gunner_ship.png");    // 1,  tex_gunner
+        textures.push_back("/textures/chaser_ship.png");    // 2,  tex_chaser
+        textures.push_back("/textures/kamikaze_ship.png");  // 3,  tex_kamikaze
+        textures.push_back("/textures/background.png");     // 4,  tex_stars
+        textures.push_back("/textures/explosion.png");      // 5,  tex_explosion
+        textures.push_back("/textures/bullet.png");         // 6,  tex_bullet
+        textures.push_back("/textures/enemy_spawn.png");    // 7,  tex_portal
+        textures.push_back("/textures/double_points.png");  // 8,  tex_double_points
+        textures.push_back("/textures/bullet_boost.png");   // 9,  tex_bullet_boost
+        textures.push_back("/textures/cold_shock.png");     // 10, tex_cold_shock
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
@@ -225,8 +229,10 @@ namespace game {
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(-9.0f, -16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(9.0f, -16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
 
-        // Setup starter collectibles
-        collectible_arr.push_back(new CollectibleGameObject(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_collectible]));
+        // DEBUG just checking how collectibles look
+        collectible_arr.push_back(new DoublePoints(glm::vec3(-4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_double_points]));
+        collectible_arr.push_back(new BulletBoost(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_bullet_boost]));
+        collectible_arr.push_back(new ColdShock(glm::vec3(4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_cold_shock]));
 
         // Setup background
         background = new GameObject(glm::vec3(0.0f, 0.0f, 0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
@@ -450,7 +456,7 @@ namespace game {
 
             // Handle firing a bullet (mouse: LEFT-CLICK)
             if (glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_LEFT) == 1) {
-                if (firing_cooldown.Finished() && !holding_shoot) {
+                if (!holding_shoot && firing_cooldown.Finished()) {
                     SpawnPlayerBullet();
                     firing_cooldown.Start(player->GetWeapon()->GetFiringCooldown());
 
@@ -479,11 +485,8 @@ namespace game {
     /*** Update all the game objects ***/
     void Game::Update(double delta_time) {
 
-        // Pre-def, little optimization
-        glm::vec3 player_pos = player->GetPosition();
-
         // Update the Camera
-        camera_target_pos = player_pos;
+        camera_target_pos = player->GetPosition();
         camera_pos = glm::mix(camera_pos, camera_target_pos, CAMERA_SMOOTHNESS);
 
         // Update the Player
@@ -563,6 +566,7 @@ namespace game {
 
             if (collectible->EraseTimerCheck()) {
                 collectible_arr.erase(collectible_arr.begin() + i);
+                am.StopSound(power_up_ambience);
                 delete collectible;
             }
 
@@ -600,6 +604,10 @@ namespace game {
         enemy->SetTexture(tex_[5]); // explosion texture
         enemy->SetScale(glm::vec2(1.8f));
         enemy->StartEraseTimer();
+
+        // add points for killing an enemy
+        player->AddPoints(100);
+        std::cout << "points: " << player->GetPoints() << std::endl;
 
         // play explosion sound
         am.PlaySound(boom_sfx);
@@ -656,6 +664,19 @@ namespace game {
     /*** Handle collecting a collectible ***/
     void Game::CollectItem(CollectibleGameObject* collectible) {
         collectible->Collect();
+
+        // check which power-up object was picked up
+        if (dynamic_cast<DoublePoints*>(collectible)) {
+            player->SetDoublePoints(true);
+        }
+        else if (dynamic_cast<BulletBoost*>(collectible)) {
+            player->SetBulletBoost(true);
+        }
+        else if (dynamic_cast<ColdShock*>(collectible)) {
+            player->SetColdShock(true);
+        }
+
+        // handle sounds
         am.PlaySound(collect_sfx);
         am.StopSound(power_up_ambience);
     }
@@ -667,8 +688,8 @@ namespace game {
 
         // generate a random number for choosing the enemy to be spawned
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<> temp_dis(1.0f, 3.99f);
-        int random_enemy_index = floor(temp_dis(gen));
+        std::uniform_int_distribution<> temp_dis(1, 3);
+        int random_enemy_index = temp_dis(gen);
 
         // get coordinates for the spawn based on spawn portals
         glm::vec3 spawn_pos = enemy_spawn_arr[spawn_index]->GetPosition();
@@ -692,26 +713,36 @@ namespace game {
         case 3:
             enemy_arr.push_back(new KamikazeEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[3]));
             break;
-        default:
-            // should never reach here, so we error if it does
-            std::cerr << "Error: RNG not properly spawning enemies." << std::endl;
         }
     }
 
 
     /*** Spawn a collectible, occasionally called when killing an enemy, spawns on their explosion ***/
     void Game::SpawnCollectible(EnemyGameObject* enemy) {
+        std::mt19937 gen(rd()); // RNG setup
 
-        // use RNG for setting random velocity, will be refactored to choose a random power-up later
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<> dis(0.0f, TWO_PI);
-        float velocity_angle = dis(gen);
+        // generate a random int to determine which power-up to spawn
+        std::uniform_int_distribution<> dis_type(1, 3);
+        int rand_type = dis_type(gen);
 
         // setup the new collectible
-        CollectibleGameObject* power_up = new CollectibleGameObject(
-            enemy->GetPosition(), sprite_, &sprite_shader_, tex_[6]
-        );
+        CollectibleGameObject* power_up;
+        switch (rand_type) {
+        case 1:
+            power_up = new DoublePoints(enemy->GetPosition(), sprite_, &sprite_shader_, tex_[8]);
+            break;
+        case 2:
+            power_up = new BulletBoost(enemy->GetPosition(), sprite_, &sprite_shader_, tex_[9]);
+            break;
+        case 3:
+            power_up = new ColdShock(enemy->GetPosition(), sprite_, &sprite_shader_, tex_[10]);
+            break;
+        }
         collectible_arr.push_back(power_up);
+
+        // generate a random angle, then convert to a vector to be used as velocity
+        std::uniform_real_distribution<> dis_angle(0.0f, TWO_PI);
+        float velocity_angle = dis_angle(gen);
 
         // give the collectible random velocity
         power_up->SetVelocity(glm::vec3(cos(velocity_angle), sin(velocity_angle), 0.0f));
@@ -729,7 +760,7 @@ namespace game {
 
         // create the bullet object and add to collection
         ProjectileGameObject* bullet = new ProjectileGameObject(
-            player->GetPosition(), sprite_, &sprite_shader_, tex_[7], weapon->GetBulletLifespan(), weapon->GetDamage()
+            player->GetPosition(), sprite_, &sprite_shader_, tex_[6], weapon->GetBulletLifespan(), weapon->GetDamage()
         );
         projectile_arr.push_back(bullet);
 
@@ -760,7 +791,7 @@ namespace game {
 
         // create the bullet object and add to collection
         ProjectileGameObject* bullet = new ProjectileGameObject(
-            gunner->GetPosition(), sprite_, &sprite_shader_, tex_[7], GUNNER_BULLET_LIFESPAN, gunner->GetBulletDamage()
+            gunner->GetPosition(), sprite_, &sprite_shader_, tex_[6], GUNNER_BULLET_LIFESPAN, gunner->GetBulletDamage()
         );
         gunner_projectile_arr.push_back(bullet);
 

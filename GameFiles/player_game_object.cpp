@@ -13,8 +13,13 @@ namespace game {
 		max_health = health;
 		angle_ = 0;
 		target_angle = 0;
+		points = 0;
+		weapon = (0, 0, 0, 0, 0, 0);
+		double_points = false;
+		bullet_boost = false;
+		cold_shock = false;
 		
-		// start health timers
+		// initialize health timers
 		i_frames_timer.Start(0.0);
 		regen_cd.Start(0.0);
 		regen_step.Start(0.0);
@@ -57,6 +62,19 @@ namespace game {
 				std::cout << "Player HP: " << health << " -> Regenerated " << REGEN_AMOUNT << " Health." << std::endl;
 			}
 		}
+
+		// Check power-up timers, if expired, reset states back to false
+		if (dp_timer.FinishedAndStop()) {
+			double_points = false;
+		}
+		if (bb_timer.FinishedAndStop()) {
+			bullet_boost = false;
+			Weapon* weapon = GetWeapon();
+			weapon->SetDamage(weapon->GetDamage() / 2);
+		}
+		if (cs_timer.FinishedAndStop()) {
+			cold_shock = false;
+		}
 	}
 
 
@@ -86,6 +104,52 @@ namespace game {
 
 			// debug, needed until HUD is implemented
 			std::cout << "Player HP: " << health << " -> Took " << recieved_dmg << " Damage." << std::endl;
+		}
+	}
+
+
+	/*** Add points to the player member var ***/
+	void PlayerGameObject::AddPoints(int amount) {
+		if (double_points) {
+			points += amount * 2;
+		}
+		else {
+			points += amount;
+		}
+		
+	}
+
+
+	/*** Handle Double Points state and timer ***/
+	void PlayerGameObject::SetDoublePoints(bool tf) { 
+		double_points = tf;
+		if (tf) {
+			dp_timer.Start(POWER_UP_DURATION);
+		} 
+	}
+
+
+	/*** Handle Bullet Boost state and timer ***/
+	void PlayerGameObject::SetBulletBoost(bool tf) {
+		bullet_boost = tf;
+		if (tf) {
+
+			// avoid multiplying multiple times
+			if (!bb_timer.IsRunning()) {
+				Weapon* weapon = GetWeapon();
+				weapon->SetDamage(weapon->GetDamage() * 2);
+			}
+
+			bb_timer.Start(POWER_UP_DURATION);
+		}
+	}
+
+
+	/*** Handle Cold Shock state and timer ***/
+	void PlayerGameObject::SetColdShock(bool tf) {
+		cold_shock = tf;
+		if (tf) {
+			cs_timer.Start(POWER_UP_DURATION);
 		}
 	}
 

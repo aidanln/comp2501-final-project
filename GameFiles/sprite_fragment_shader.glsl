@@ -24,8 +24,8 @@ void main()
     // Assign color to fragment
     gl_FragColor = color;
 
-    // Check for transparency
-    if (color.a < 0.5) {
+    // Discard objects that cross the transparency threshold
+    if (color.a < 0.3) {
          discard;
     }
 }

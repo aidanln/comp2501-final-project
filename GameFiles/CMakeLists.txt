@@ -16,6 +16,7 @@ set(HDRS
     game.h
     game_object.h
     player_game_object.h
+    power_ups.h
     projectile_game_object.h
     shader.h
     geometry.h
@@ -35,6 +36,7 @@ set(SRCS
     game_object.cpp
     main.cpp
     player_game_object.cpp
+    power_ups.cpp
     projectile_game_object.cpp
     shader.cpp
     sprite.cpp

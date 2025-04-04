@@ -9,8 +9,8 @@ namespace game {
 		: GameObject(position, geom, shader, texture) {
 
 		// initalize default values
-		scale_ = glm::vec2(0.8f);
 		collected = false;
+		power_up_duration = 20.0f;
 
 		// start erase_timer, as collectibles should auto delete after a period of time
 		erase_timer_.Start(COLLECTIBLE_DURATION);
@@ -27,6 +27,9 @@ namespace game {
 	void CollectibleGameObject::Collect(void) {
 		collected = true;
 		ghost_ = true;
+
+		// override the erase timer so the collectible is erased in 2 seconds
+		erase_timer_.Start(2.0f);
 	}
 
 } // namespace game

@@ -59,7 +59,8 @@ namespace game {
 
 	const float COLLECTIBLE_SPEED = 0.25f;
 	const float COLLECTIBLE_DURATION = 7.5f;
-	const float POWER_UP_SPAWN_CHANCE = 0.5f; // 5% right now, tentative
+	const float POWER_UP_SPAWN_CHANCE = 0.55f; // 5% right now, tentative
+	const float POWER_UP_DURATION = 20.0f; // power up effects will last for 20s
 
 
 
