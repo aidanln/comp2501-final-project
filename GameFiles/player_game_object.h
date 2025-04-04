@@ -32,6 +32,16 @@ namespace game {
         inline Weapon* GetWeapon() { return weapon; }
         inline void SetWeapon(Weapon* w) { weapon = w; }
 
+        // Point handlers
+        void AddPoints(int amount);
+        inline int GetPoints(void) const { return points; }
+        inline void SpendPoints(int amount) { points -= amount; }
+
+        // Power-up state handlers
+        void SetDoublePoints(bool tf);
+        void SetBulletBoost(bool tf);
+        void SetColdShock(bool tf);
+
     private:
         // Health trackers
         short int health;
@@ -48,6 +58,16 @@ namespace game {
         // i need more bullets
         Weapon* weapon;
 
+        // Track points, used for buying items and whatnot
+        int points;
+
+        // Power-up flags
+        bool double_points, bullet_boost, cold_shock;
+
+        // Power-up specific timers
+        Timer dp_timer;
+        Timer bb_timer;
+        Timer cs_timer;
     };
 
 }

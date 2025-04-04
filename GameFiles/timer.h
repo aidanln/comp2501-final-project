@@ -20,6 +20,10 @@ namespace game {
 
             // Check if timer has finished
             bool Finished(void) const;
+            bool FinishedAndStop(void);
+
+            // Check if timer is running
+            inline bool IsRunning(void) const { return running_; }
 
         private:
             // Member vars

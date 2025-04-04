@@ -23,6 +23,7 @@ namespace game {
 
     protected:
         bool collected;
+        float power_up_duration;
 
     }; // class CollectibleGameObject
 

@@ -26,6 +26,7 @@
 #include "collectible_game_object.h"
 #include "projectile_game_object.h"
 #include "weapons.h"
+#include "power_ups.h"
 
 #include "defs.h"
 

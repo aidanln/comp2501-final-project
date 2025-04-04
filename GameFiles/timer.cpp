@@ -33,4 +33,23 @@ namespace game {
         return false;
     }
 
+
+    /*** Check if the timer has finished, but stop it if true ***/
+    bool Timer::FinishedAndStop(void) {
+        // if not running, return false
+        if (!running_) {
+            return false;
+        }
+
+        // if running, check if end_time_ has been surpassed
+        double current_time = glfwGetTime();
+        if (current_time >= end_time_) {
+            running_ = false;
+            return true;
+        }
+
+        // base case
+        return false;
+    }
+
 } // namespace game
