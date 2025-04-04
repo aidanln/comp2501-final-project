@@ -17,14 +17,12 @@ namespace game {
         ProjectileGameObject(const glm::vec3& position, Geometry* geom, Shader* shader,
                              const GLuint& texture, float lifespan, int damage);
 
-        // overriden functions
-        void Update(double delta_time) override; // moves based on velocity vector
-        void StartEraseTimer(void) override;
-        bool EraseTimerCheck(void) override; // decrements projectileCount if finished
+        // overriden Update method, moves based on velocity vector
+        void Update(double delta_time) override;
 
         // getters
         inline const glm::vec3& GetOrigin(void) const { return origin;  }
-        inline float GetLifespan(void) const { return time_elapsed; }
+        inline float GetBulletTimeElapsed(void) const { return time_elapsed; }
         inline float GetDamage(void) const { return damage; }
         inline bool GetImpact(void) const { return impact_flag; }
 
@@ -34,7 +32,7 @@ namespace game {
     private:
         // private member variables
         glm::vec3 origin;
-        float lifespan;
+        float bullet_lifespan;
         float time_elapsed;
         int damage;
         bool impact_flag;

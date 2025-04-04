@@ -21,6 +21,7 @@
 #include "game_object.h"
 #include "player_game_object.h"
 #include "enemy_game_object.h"
+#include "enemy_spawn.h"
 #include "derived_enemy_objects.h"
 #include "collectible_game_object.h"
 #include "projectile_game_object.h"
@@ -73,7 +74,7 @@ namespace game {
         void EnemyCollisionCheck(EnemyGameObject* enemy);
         void ExplodeEnemy(EnemyGameObject* enemy);
 
-        // Ray-Circle collision detection, checks against projectile arrays
+        // Check against projectile arrays for ray-circle collision
         void EnemyShotCheck(EnemyGameObject* enemy, double delta_time);
         void PlayerShotCheck(double delta_time);
 
@@ -82,12 +83,13 @@ namespace game {
   
         // Spawning of game objects
         void SpawnEnemy(void);
-        void SpawnCollectible(void);
+        void SpawnCollectible(EnemyGameObject* enemy);
         void SpawnPlayerBullet(void);
         void SpawnGunnerBullet(GunnerEnemy* gunner);
 
         // Helper methods
         bool CollisionCheck(GameObject* obj_1, GameObject* obj_2);
+        bool RayCircleCheck(ProjectileGameObject* bullet, GameObject* obj, float col_dist);
         void KillPlayer(void);
         void GameOver(void);
         
@@ -119,30 +121,37 @@ namespace game {
         // Shader for rendering sprites in the scene
         Shader sprite_shader_;
 
-        // Game Object Storage, now seperated to optimize the Update() function
-        PlayerGameObject* player;
-        std::vector<EnemyGameObject*> enemy_arr;
-        std::vector<ProjectileGameObject*> projectile_arr;
-        std::vector<ProjectileGameObject*> gunner_projectile_arr;
-        std::vector<CollectibleGameObject*> collectible_arr;
-        GameObject* background;
-
         // References to textures, this needs to be a pointer
         GLuint* tex_;
 
         // Keep track of time
         double current_time_;
 
+        // Game Object Storage, now seperated to optimize the Update() function
+        PlayerGameObject* player;
+        std::vector<EnemyGameObject*> enemy_arr;
+        std::vector<EnemySpawn*> enemy_spawn_arr;
+        std::vector<ProjectileGameObject*> projectile_arr;
+        std::vector<ProjectileGameObject*> gunner_projectile_arr;
+        std::vector<CollectibleGameObject*> collectible_arr;
+        GameObject* background;
+
+        // Weapon Object Storage, entity object for PlayerGameObject
+        Weapon* pistol;
+        Weapon* smg;
+        Weapon* rifle;
+        Weapon* sniper;
+
         // Timers
         Timer intro_timer;
         Timer enemy_spawn_timer;
-        Timer collectible_timer;
         Timer firing_cooldown;
         Timer close_window_timer;
 
         // Audio Variables, should be callable 
         audio_manager::AudioManager am;
-        int bg_music, game_start_sfx, boom_sfx, game_over_sfx, collect_sfx;
+        int bg_music, game_start_sfx, boom_sfx, game_over_sfx, collect_sfx, power_up_ambience,
+            player_hit_sfx, player_shoot_sfx, enemy_hit_sfx, enemy_shoot_sfx;
 
         // Camera Attributes, needed for smooth movement
         glm::vec3 camera_pos;
@@ -154,12 +163,10 @@ namespace game {
 
         // Trackers
         glm::vec3 cursor_pos;
+        int spawn_index;
 
-        // Weapons
-        Weapon* pistol;
-        Weapon* smg;
-        Weapon* rifle;
-        Weapon* sniper;
+        // Random Number Generation Helper
+        std::random_device rd;
 
     }; // class Game
 

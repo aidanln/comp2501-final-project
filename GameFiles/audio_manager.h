@@ -37,27 +37,39 @@ namespace audio_manager {
              * the audio device to be used. If the default device should
              * be used, set device_name to NULL. */
             void Init(const char *device_name);
+
             // Shut down the audio system
             void ShutDown(void);
+
             /* Load a wav audio file and add its contents to a buffer.
              * The buffer can then be played multiple times with
              * PlaySound. AddSound returns the index of the file in
              * the list of buffers. This index should be passed to
              * PlaySound to play the respective file */
             int AddSound(const char *filename);
+
             // Play buffer with specific index
             void PlaySound(int index);
+
+            // Stop a sound
+            void StopSound(int index);
+
             // Check if the buffer with the given index is being played
             bool SoundIsPlaying(int index);
+
             // Check if any buffer is being played
             bool AnySoundIsPlaying(void);
+
             // List all audio devices available to standard output
             void ListAudioDevices(void);
+
             // Set spatial position of listener
             void SetListenerPosition(double x, double y, double z);
+
             /* Set spatial position of a sound. Same index as used for
              * PlaySound */
             void SetSoundPosition(int index, double x, double y, double z);
+
             // Set whether sound should be looped
             void SetLoop(int index, bool loop);
 

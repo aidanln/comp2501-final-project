@@ -18,10 +18,10 @@ namespace game {
         void Update(double delta_time) override;
 
         // Collect flag helpers
-        void Collect(void);
+        virtual void Collect(void);
         inline bool IsCollected(void) const { return collected; }
 
-    private:
+    protected:
         bool collected;
 
     }; // class CollectibleGameObject
