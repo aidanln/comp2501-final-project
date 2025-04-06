@@ -46,6 +46,9 @@ namespace game {
             // Sets a uniform matrix4x4 variable in your shader program to a matrix4x4
             void SetUniformMat4(const GLchar *name, const glm::mat4 &matrix);
 
+            // Sets a uniform int array variable in your shader program to an int array
+            void SetUniformIntArray(const GLchar* name, int len, const GLint* data);
+
             // Get OpenGL reference of shader program
             inline GLuint GetShaderProgram(void) const { return shader_program_; }
 

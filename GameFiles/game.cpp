@@ -102,6 +102,9 @@ namespace game {
 
         // Initialize sprite shader
         sprite_shader_.Init((resources_directory_g + std::string("/sprite_vertex_shader.glsl")).c_str(), (resources_directory_g + std::string("/sprite_fragment_shader.glsl")).c_str());
+        
+        // Initialize text shader
+        text_shader_.Init((resources_directory_g + std::string("/sprite_vertex_shader.glsl")).c_str(), (resources_directory_g + std::string("/text_fragment_shader.glsl")).c_str());
 
         // Initialize time
         current_time_ = 0.0;
@@ -205,7 +208,8 @@ namespace game {
             tex_portal = 7,
             tex_double_points = 8,
             tex_bullet_boost = 9,
-            tex_cold_shock = 10
+            tex_cold_shock = 10,
+            tex_font = 11
         };
         textures.push_back("/textures/player_ship.png");    // 0,  tex_player
         textures.push_back("/textures/gunner_ship.png");    // 1,  tex_gunner
@@ -218,6 +222,7 @@ namespace game {
         textures.push_back("/textures/double_points.png");  // 8,  tex_double_points
         textures.push_back("/textures/bullet_boost.png");   // 9,  tex_bullet_boost
         textures.push_back("/textures/cold_shock.png");     // 10, tex_cold_shock
+        textures.push_back("/textures/font.png");           // 11, tex_font
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
@@ -239,7 +244,12 @@ namespace game {
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_bullet_boost], 1));
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_cold_shock], 2));
         */
-
+        score = new TextGameObject(glm::vec3(0.0f, -2.0f, 0.0f), sprite_, &text_shader_, tex_[tex_font]);
+        score->SetTextScale(TEXT_SIZE_X, TEXT_SIZE_Y);
+        score->SetPosition(camera_pos + SCORE_TEXT_OFFSET);
+        std::string string = "Points: " + std::to_string(player->GetPoints());
+        score->SetText(string);
+        text_arr.push_back(score);
         // Setup background
         background = new GameObject(glm::vec3(0.0f, 0.0f, 0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(WORLD_SIZE));
@@ -526,7 +536,7 @@ namespace game {
         camera_pos.y = glm::clamp(lerp_camera_pos.y, -dynamic_y_bound, dynamic_y_bound);
 
 
-            /* PLAYER UPDATES*/
+            /* PLAYER UPDATES */
 
         if (update_flag) {
             if (player->GetHealth() <= 0) {
@@ -547,7 +557,7 @@ namespace game {
         }
         
 
-            /* ENEMY UPDATES*/
+            /* ENEMY UPDATES */
 
         for (int i = 0; i < enemy_arr.size(); ++i) {
             EnemyGameObject* enemy = enemy_arr[i];
@@ -590,7 +600,7 @@ namespace game {
         }
 
 
-            /* PLAYER PROJECTILE UPDATES*/
+            /* PLAYER PROJECTILE UPDATES */
 
         for (int i = 0; i < projectile_arr.size(); ++i) {
             ProjectileGameObject* bullet = projectile_arr[i];
@@ -604,7 +614,7 @@ namespace game {
         }
 
         
-            /* ENEMY PROJECTILE UPDATES*/
+            /* ENEMY PROJECTILE UPDATES */
 
         for (int i = 0; i < gunner_projectile_arr.size(); ++i) {
             ProjectileGameObject* bullet = gunner_projectile_arr[i];
@@ -618,7 +628,7 @@ namespace game {
         }
         
         
-            /* COLLECTIBLE UPDATES*/
+            /* COLLECTIBLE UPDATES */
 
         for (int i = 0; i < collectible_arr.size(); ++i) {
             CollectibleGameObject* collectible = collectible_arr[i];
@@ -641,12 +651,16 @@ namespace game {
         }
 
 
-            /* PORTAL UPDATES*/
+            /* PORTAL UPDATES */
 
         for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
             enemy_spawn_arr[i]->Update(delta_time);
         }
 
+            /* TEXT UPDATES */
+        score->SetPosition(camera_pos + SCORE_TEXT_OFFSET);
+        std::string string = "Points: " + std::to_string(player->GetPoints());
+        score->SetText(string);
     }
 
 
@@ -994,6 +1008,9 @@ namespace game {
         }
         for (int i = 0; i < enemy_arr.size(); i++) {
             enemy_arr[i]->Render(view_matrix, current_time_);
+        }
+        for (int i = 0; i < text_arr.size(); i++) {
+            text_arr[i]->Render(view_matrix, current_time_);
         }
         player->Render(view_matrix, current_time_);
     }

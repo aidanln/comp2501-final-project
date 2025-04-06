@@ -26,6 +26,7 @@
 #include "collectible_game_object.h"
 #include "projectile_game_object.h"
 #include "weapons.h"
+#include "text_game_object.h"
 
 #include "defs.h"
 
@@ -128,6 +129,9 @@ namespace game {
         // Shader for rendering sprites in the scene
         Shader sprite_shader_;
 
+        // Shader for rendering texts
+        Shader text_shader_;
+
         // References to textures, this needs to be a pointer
         GLuint* tex_;
 
@@ -141,7 +145,9 @@ namespace game {
         std::vector<ProjectileGameObject*> projectile_arr;
         std::vector<ProjectileGameObject*> gunner_projectile_arr;
         std::vector<CollectibleGameObject*> collectible_arr;
+        std::vector<TextGameObject*> text_arr;
         GameObject* background;
+        TextGameObject* score;
 
         // Weapon Object Storage, entity object for PlayerGameObject
         Weapon* pistol;

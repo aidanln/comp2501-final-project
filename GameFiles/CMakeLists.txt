@@ -19,6 +19,7 @@ set(HDRS
     projectile_game_object.h
     shader.h
     geometry.h
+    text_game_object.h
     sprite.h
     timer.h
     weapons.h
@@ -38,10 +39,12 @@ set(SRCS
     projectile_game_object.cpp
     shader.cpp
     sprite.cpp
+    text_game_object.cpp
     timer.cpp
     weapons.cpp
     sprite_vertex_shader.glsl
     sprite_fragment_shader.glsl
+    text_fragment_shader.glsl
 )
 
 # Add path name to configuration file
