@@ -26,22 +26,24 @@ namespace game {
         // Retrieve the players updated position
         virtual void UpdateTarget(GameObject* obj);
 
-        // Exploded State Handlers
-        inline void Explode(void) { exploded = true; }
+        // Getters
+        inline int GetHealth(void) const { return health; }
+        inline int GetDamage(void) const { return damage; }
+        inline int GetPointReward(void) const { return point_reward; }
         inline bool IsExploded(void) const { return exploded; }
 
-        // Health Handlers
-        inline int GetHealth(void) const { return health; }
-        void TakeDamage(int recieved_dmg);
-
-        // Damage Handlers
-        inline int GetDamage(void) const { return damage; }
+        // Setters
         inline void SetDamage(int dmg) { damage = dmg; }
+        inline void Explode(void) { exploded = true; }
+
+        // Health/Damage helpers
+        void TakeDamage(int recieved_dmg);
 
     protected:
         // member vars to be inherited by all enemy types
         int health;
         int damage;
+        unsigned short int point_reward;
         bool exploded;
         float target_angle;
         glm::vec3 target_pos;

@@ -32,12 +32,16 @@ namespace game {
 	const float CAMERA_ZOOM = 0.25f;
 	const float CAMERA_SMOOTHNESS = 0.05f;
 	const float WORLD_SIZE = 40.0f;
+	const float CAMERA_X_BOUND = 16.0f;
+	const float CAMERA_Y_BOUND = 16.0f;
+	const float PLAYER_X_BOUND = 19.5f;
+	const float PLAYER_Y_BOUND = 19.5f;
 
 	// Universal timers
 	const float INTRO_DURATION = 2.3f;
 	const float DEFAULT_ERASE_TIMER = 2.5f;
-	const float ENEMY_SPAWN_DELAY = 2.0f;
-
+	const float ENEMY_SPAWN_DELAY = 5.0f;
+	
 
 
 		/*** PlayerGameObject Attributes ***/
@@ -46,6 +50,7 @@ namespace game {
 	const unsigned short int PLAYER_INIT_HP = 100;
 	const float PLAYER_ACCEL_FORCE = 20.0f;
 	const float PLAYER_MAX_SPEED = 4.2f;
+	const unsigned short int SHOT_HIT_POINT_REWARD = 10;
 
 	// Player healing helpers
 	const float INVINCIBILITY_DURATION = 0.5f;
@@ -59,7 +64,7 @@ namespace game {
 
 	const float COLLECTIBLE_SPEED = 0.25f;
 	const float COLLECTIBLE_DURATION = 7.5f;
-	const float POWER_UP_SPAWN_CHANCE = 0.55f; // 5% right now, tentative
+	const float POWER_UP_SPAWN_CHANCE = 0.025f;
 	const float POWER_UP_DURATION = 20.0f; // power up effects will last for 20s
 
 
@@ -67,8 +72,9 @@ namespace game {
 		/*** EnemyGameObject Attributes ***/
 
 	// Gunner
-	const unsigned short int GUNNER_INIT_HP = 20;
+	const unsigned short int GUNNER_INIT_HP = 25;
 	const unsigned short int GUNNER_INIT_DMG = 40;
+	const unsigned short int GUNNER_POINT_REWARD = 250;
 	const float GUNNER_SPEED = 0.5f;
 	const float ORBIT_RADIUS = 0.6f;
 	const float ORBIT_SPEED = 4.0f;
@@ -78,11 +84,13 @@ namespace game {
 	// Chaser
 	const unsigned short int CHASER_INIT_HP = 15;
 	const unsigned short int CHASER_INIT_DMG = 20;
+	const unsigned short int CHASER_POINT_REWARD = 100;
 	const float CHASER_SPEED = 2.5f;
 
 	// Kamikaze
 	const unsigned short int KAMIKAZE_INIT_HP = 5;
 	const unsigned short int KAMIKAZE_INIT_DMG = 30;
+	const unsigned short int KAMIKAZE_POINT_REWARD = 150;
 	const float KAMIKAZE_SPEED = 4.0f;
 	const float KAMIKAZE_LOCKON_DIST = 1.2f;
 

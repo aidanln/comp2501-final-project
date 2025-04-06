@@ -5,12 +5,12 @@
 namespace game {
 
 	/*** Constructor ***/
-	CollectibleGameObject::CollectibleGameObject(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture)
-		: GameObject(position, geom, shader, texture) {
+	CollectibleGameObject::CollectibleGameObject(const glm::vec3& position, Geometry* geom, Shader* shader,
+												 const GLuint& texture, int pu_id)
+		: GameObject(position, geom, shader, texture), power_up_id(pu_id) {
 
 		// initalize default values
 		collected = false;
-		power_up_duration = 20.0f;
 
 		// start erase_timer, as collectibles should auto delete after a period of time
 		erase_timer_.Start(COLLECTIBLE_DURATION);

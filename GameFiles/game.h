@@ -26,7 +26,6 @@
 #include "collectible_game_object.h"
 #include "projectile_game_object.h"
 #include "weapons.h"
-#include "power_ups.h"
 
 #include "defs.h"
 
@@ -80,7 +79,7 @@ namespace game {
         void PlayerShotCheck(double delta_time);
 
         // Collectible-Specific helpers
-        void CollectItem(CollectibleGameObject* collectible);
+        void CollectPowerUp(CollectibleGameObject* collectible);
   
         // Spawning of game objects
         void SpawnEnemy(void);
@@ -106,6 +105,9 @@ namespace game {
         // Set a specific texture
         void SetTexture(const GLuint& w, const char* fname);
 
+        // Pre-multiply alpha channels, needed for rendering transparent parts in textures
+        void PremultiplyAlpha(unsigned char* image, int pixelCount);
+
         // Helper method for fps, needed for performance monitoring
         void DisplayFPS(double delta_time) const;
 
@@ -114,6 +116,10 @@ namespace game {
 
         // Main window: pointer to the GLFW window structure
         GLFWwindow* window_;
+
+        // Window Metadata Tracking
+        int window_width_;
+        int window_height_;
 
         // Sprite geometry
         Geometry* sprite_;

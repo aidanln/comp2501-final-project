@@ -29,8 +29,9 @@ namespace game {
         void TakeDamage(int recieved_dmg);
 
         // Weapon handlers
-        inline Weapon* GetWeapon() { return weapon; }
+        inline Weapon* GetWeapon(void) { return weapon; }
         inline void SetWeapon(Weapon* w) { weapon = w; }
+        int GetDamage(void);
 
         // Point handlers
         void AddPoints(int amount);
@@ -38,9 +39,10 @@ namespace game {
         inline void SpendPoints(int amount) { points -= amount; }
 
         // Power-up state handlers
-        void SetDoublePoints(bool tf);
-        void SetBulletBoost(bool tf);
-        void SetColdShock(bool tf);
+        void EnableDoublePoints(void);
+        void EnableBulletBoost(void);
+        void EnableColdShock(void);
+        inline bool IsColdShockActive(void) const { return cold_shock; }
 
     private:
         // Health trackers

@@ -40,7 +40,11 @@ namespace game {
 
 		// Update position based on velocity, then decelerate
 		position_ += velocity_ * dt;
-		velocity_ /= 1.01 + (dt * 3);
+		velocity_ /= 1.01 + (dt * 3); // weird
+
+		// Clamp player position to ensure no OOB movement is possible
+		position_.x = glm::clamp(position_.x, -PLAYER_X_BOUND, PLAYER_X_BOUND);
+		position_.y = glm::clamp(position_.y, -PLAYER_Y_BOUND, PLAYER_Y_BOUND);
 
 		// Update rotation using lerp with the target angle, ensures smooth motion
 		angle_ = LerpAngle(angle_, target_angle, 0.1f);
@@ -48,7 +52,7 @@ namespace game {
 		// Regenerate health, provided the cooldown is finished and we are not already at max
 		if (regen_cd.Finished() && health < max_health) {
 
-			// Use "steps" to regenerate, i.e. regen one time once a step has finished
+			// use "steps" to regenerate, i.e. regen one time once a step has finished
 			if (regen_step.Finished()) {
 				regen_step.Start(REGEN_STEP_CD);
 				health += REGEN_AMOUNT;
@@ -59,26 +63,27 @@ namespace game {
 				}
 
 				// debug, needed until HUD is implemented
-				std::cout << "Player HP: " << health << " -> Regenerated " << REGEN_AMOUNT << " Health." << std::endl;
+				std::cout << "(HP) player health: " << health << " -> regenerated " << REGEN_AMOUNT << " health." << std::endl;
 			}
 		}
 
 		// Check power-up timers, if expired, reset states back to false
 		if (dp_timer.FinishedAndStop()) {
 			double_points = false;
+			std::cout << "(PU) double points ended." << std::endl;
 		}
 		if (bb_timer.FinishedAndStop()) {
 			bullet_boost = false;
-			Weapon* weapon = GetWeapon();
-			weapon->SetDamage(weapon->GetDamage() / 2);
+			std::cout << "(PU) bullet boost ended." << std::endl;
 		}
 		if (cs_timer.FinishedAndStop()) {
 			cold_shock = false;
+			std::cout << "(PU) cold shock ended." << std::endl;
 		}
 	}
 
 
-	/*** Longer erase timer, as this only plays during a game over ***/
+	/*** Longer erase timer than default, as this only plays during a game over ***/
 	void PlayerGameObject::StartEraseTimer(void) {
 		erase_timer_.Start(5.0f);
 	}
@@ -102,13 +107,24 @@ namespace game {
 				i_frames_timer.Start(INVINCIBILITY_DURATION);
 			}
 
-			// debug, needed until HUD is implemented
-			std::cout << "Player HP: " << health << " -> Took " << recieved_dmg << " Damage." << std::endl;
+			// debug, keep until HUD is added
+			std::cout << "(HP) player health: " << health << " -> took " << recieved_dmg << " damage." << std::endl;
 		}
 	}
 
 
-	/*** Add points to the player member var ***/
+	/*** Get the player's current damage, considers bullet boost flag ***/
+	int PlayerGameObject::GetDamage(void) {
+		if (bullet_boost) {
+			return weapon->GetDamage() * 2;
+		}
+		else {
+			return weapon->GetDamage();
+		}
+	}
+
+
+	/*** Add points to the player member var, considers double points flag ***/
 	void PlayerGameObject::AddPoints(int amount) {
 		if (double_points) {
 			points += amount * 2;
@@ -116,41 +132,32 @@ namespace game {
 		else {
 			points += amount;
 		}
-		
+		// debug, keep until HUD is added
+		std::cout << "(PTS) new point amount: " << points << std::endl;
 	}
 
 
 	/*** Handle Double Points state and timer ***/
-	void PlayerGameObject::SetDoublePoints(bool tf) { 
-		double_points = tf;
-		if (tf) {
-			dp_timer.Start(POWER_UP_DURATION);
-		} 
+	void PlayerGameObject::EnableDoublePoints(void) { 
+		double_points = true;
+		dp_timer.Start(POWER_UP_DURATION);
+		std::cout << "(PU) double points started!" << std::endl;
 	}
 
 
 	/*** Handle Bullet Boost state and timer ***/
-	void PlayerGameObject::SetBulletBoost(bool tf) {
-		bullet_boost = tf;
-		if (tf) {
-
-			// avoid multiplying multiple times
-			if (!bb_timer.IsRunning()) {
-				Weapon* weapon = GetWeapon();
-				weapon->SetDamage(weapon->GetDamage() * 2);
-			}
-
-			bb_timer.Start(POWER_UP_DURATION);
-		}
+	void PlayerGameObject::EnableBulletBoost(void) {
+		bullet_boost = true;
+		bb_timer.Start(POWER_UP_DURATION);
+		std::cout << "(PU) bullet boost started!" << std::endl;
 	}
 
 
 	/*** Handle Cold Shock state and timer ***/
-	void PlayerGameObject::SetColdShock(bool tf) {
-		cold_shock = tf;
-		if (tf) {
-			cs_timer.Start(POWER_UP_DURATION);
-		}
+	void PlayerGameObject::EnableColdShock(void) {
+		cold_shock = true;
+		cs_timer.Start(POWER_UP_DURATION);
+		std::cout << "(PU) cold shock started!" << std::endl;
 	}
 
 }

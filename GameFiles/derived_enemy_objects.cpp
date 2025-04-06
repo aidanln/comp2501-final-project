@@ -15,36 +15,44 @@ namespace game {
 		orbit_angle = 0;
 		health = GUNNER_INIT_HP;
 		damage = GUNNER_INIT_DMG;
+		point_reward = GUNNER_POINT_REWARD;
 		bullet_damage = GUNNER_INIT_BULLET_DMG;
-		shoot_timer.Start(GUNNER_SHOOT_CD);
+		time_since_last_shot = 0.0f;
 	}
 
 
 	/*** Update function, performs orbit movement with a moving origin ***/
 	void GunnerEnemy::Update(double delta_time) {
 		EnemyGameObject::Update(delta_time);
-		float distance_to_player = glm::distance(target_pos, position_);
 
-		// move the orbit origin *towards* the player if the gunner is far away
+		// initalizations, provides small runtime optimizations
+		float distance_to_player = glm::distance(target_pos, position_);
+		float dt = static_cast<float>(delta_time);
+
+		// move the orbit origin TOWARDS the player if the gunner is far away
 		if (distance_to_player > GUNNER_STAY_DIST) {
-			origin_pos += velocity_ * GUNNER_SPEED * static_cast<float>(delta_time);
+			origin_pos += velocity_ * GUNNER_SPEED * dt;
 		}
-		// move the orbit origin *away* from the player if the player approaches
+
+		// move the orbit origin AWAY FROM the player if the player approaches
 		else if (distance_to_player < GUNNER_EVADE_DIST) {
-			origin_pos -= velocity_ * GUNNER_SPEED * static_cast<float>(delta_time) * 1.5f;
+			origin_pos -= velocity_ * GUNNER_SPEED * dt * 1.5f;
 		}
 		
 		// rotate around a the origin position (via parametric equations)
 		orbit_angle += delta_time * ORBIT_SPEED;
 		position_.x = origin_pos.x + ORBIT_RADIUS * cos(orbit_angle);
 		position_.y = origin_pos.y + ORBIT_RADIUS * sin(orbit_angle);
+
+		// update time_since_last_shot
+		time_since_last_shot += dt;
 	}
 
 
-	/*** Specialized timer finished check, shoots and resets timer when done ***/
-	bool GunnerEnemy::IsFinished() {
-		if (shoot_timer.Finished()) {
-			shoot_timer.Start(GUNNER_SHOOT_CD);
+	/*** Check if the gunner should shoot, non-timer method to help with cold shock implementation ***/
+	bool GunnerEnemy::IsShootCDFinished() {
+		if (time_since_last_shot > GUNNER_SHOOT_CD) {
+			time_since_last_shot = 0.0f;
 			return true;
 		}
 		else {
@@ -64,6 +72,7 @@ namespace game {
 		scale_ = glm::vec2(0.9f);
 		health = CHASER_INIT_HP;
 		damage = CHASER_INIT_DMG;
+		point_reward = CHASER_POINT_REWARD;
 	}
 
 	
@@ -86,6 +95,7 @@ namespace game {
 		scale_ = glm::vec2(0.6f);
 		health = KAMIKAZE_INIT_HP;
 		damage = KAMIKAZE_INIT_DMG;
+		point_reward = KAMIKAZE_POINT_REWARD;
 	}
 
 	

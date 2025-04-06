@@ -20,7 +20,7 @@ namespace game {
         void Update(double delta_time) override;
 
         // Check if the shooting cooldown has finished
-        bool IsFinished();
+        bool IsShootCDFinished();
 
         // Bullet damage helper
         inline int GetBulletDamage(void) const { return bullet_damage; }
@@ -29,9 +29,10 @@ namespace game {
         // movement vars
         glm::vec3 origin_pos;
         float orbit_angle;
+
         // shooting vars
-        int bullet_damage;
-        Timer shoot_timer;
+        unsigned short int bullet_damage;
+        float time_since_last_shot;
     };
 
 

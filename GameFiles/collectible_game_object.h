@@ -12,7 +12,8 @@ namespace game {
 
     public:
         // Constructor
-        CollectibleGameObject(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture);
+        CollectibleGameObject(const glm::vec3& position, Geometry* geom, Shader* shader,
+                              const GLuint& texture, int pu_id);
 
         // Overriden update function
         void Update(double delta_time) override;
@@ -21,9 +22,14 @@ namespace game {
         virtual void Collect(void);
         inline bool IsCollected(void) const { return collected; }
 
+        // Power-Up ID helpers
+        inline int GetPowerUpID(void) const { return power_up_id; }
+
     protected:
         bool collected;
-        float power_up_duration;
+
+        // 0 = double points    1 = bullet boost     2 = cold shock
+        unsigned short int power_up_id;
 
     }; // class CollectibleGameObject
 

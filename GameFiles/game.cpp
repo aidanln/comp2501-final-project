@@ -54,6 +54,10 @@ namespace game {
             throw(std::runtime_error(std::string("Could not create window")));
         }
 
+        // Initalize the window size tracking member vars
+        window_width_ = window_width_g;
+        window_height_ = window_height_g;
+
         // Make the window's OpenGL context the current one
         glfwMakeContextCurrent(window_);
 
@@ -64,6 +68,10 @@ namespace game {
         if (err != GLEW_OK) {
             throw(std::runtime_error(std::string("Could not initialize the GLEW library: ") + std::string((const char*)glewGetErrorString(err))));
         }
+
+        // Enable pre-multipled alpha blending
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         // Set event callbacks
         glfwSetFramebufferSizeCallback(window_, ResizeCallback);
@@ -216,23 +224,21 @@ namespace game {
         player = new PlayerGameObject(glm::vec3(0.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_player]);
 
         // Setup 8 enemy spawn points on the outside of the map (represented by portal sprites)
-        // right-side
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(16.0f, -9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(16.0f, 9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
-        // top-side
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(9.0f, 16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(-9.0f, 16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
-        // left-side
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(-16.0f, 9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(-16.0f, -9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
-        // bottom-side
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(-9.0f, -16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(9.0f, -16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
 
-        // DEBUG just checking how collectibles look
-        collectible_arr.push_back(new DoublePoints(glm::vec3(-4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_double_points]));
-        collectible_arr.push_back(new BulletBoost(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_bullet_boost]));
-        collectible_arr.push_back(new ColdShock(glm::vec3(4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_cold_shock]));
+        // DEBUG, start with all the power-ups spawned in for testing purposes
+        /*
+        collectible_arr.push_back(new CollectibleGameObject(glm::vec3(-4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_double_points], 0));
+        collectible_arr.push_back(new CollectibleGameObject(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_bullet_boost], 1));
+        collectible_arr.push_back(new CollectibleGameObject(glm::vec3(4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_cold_shock], 2));
+        */
 
         // Setup background
         background = new GameObject(glm::vec3(0.0f, 0.0f, 0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
@@ -384,38 +390,33 @@ namespace game {
         // initialize cursor position (relative to monitor) and window size
         double mouse_x, mouse_y;
         glfwGetCursorPos(window_, &mouse_x, &mouse_y);
-        int window_width, window_height;
-        glfwGetWindowSize(window_, &window_width, &window_height);
+        glfwGetWindowSize(window_, &window_width_, &window_height_);
 
         // bounds check, abort if the mouse is outside the window
-        if (mouse_x < 0 || mouse_x > window_width || mouse_y < 0 || mouse_y > window_height) {
+        if (mouse_x < 0 || mouse_x > window_width_ || mouse_y < 0 || mouse_y > window_height_) {
             return;
         }
 
         // cast width/height to float and initialize cursor position (relative to game world)
-        float width = static_cast<float>(window_width);
-        float height = static_cast<float>(window_height);
-        glm::vec3 temp_pos(0.0f);
+        float width = static_cast<float>(window_width_);
+        float height = static_cast<float>(window_height_);
 
-        // case 1: horizontal aspect ratio, case 2: vertical aspect ratio
+        // case 1: handle horizontal aspect ratio
         if (width >= height) {
             float aspect_ratio = width / height;
-            temp_pos.x = ((2.0f * mouse_x - width) * aspect_ratio) / (width * CAMERA_ZOOM);
-            temp_pos.y = (-2.0f * mouse_y + height) / (height * CAMERA_ZOOM);
+            cursor_pos.x = ((2.0f * mouse_x - width) * aspect_ratio) / (width * CAMERA_ZOOM);
+            cursor_pos.y = (-2.0f * mouse_y + height) / (height * CAMERA_ZOOM);
         }
+
+        // case 2: handle vertical aspect ratio
         else {
             float aspect_ratio = height / width;
-            temp_pos.x = (2.0f * mouse_x - width) / (width * CAMERA_ZOOM);
-            temp_pos.y = ((-2.0f * mouse_y + height) * aspect_ratio) / (height * CAMERA_ZOOM);
+            cursor_pos.x = (2.0f * mouse_x - width) / (width * CAMERA_ZOOM);
+            cursor_pos.y = ((-2.0f * mouse_y + height) * aspect_ratio) / (height * CAMERA_ZOOM);
         }
 
-        // abort if the location is too close to the player
-        if (glm::length(temp_pos) < 0.02f) {
-            return;
-        }
-
-        // update the tracker variable
-        cursor_pos = temp_pos;
+        // convert to world coordinates by applying the camera offset
+        cursor_pos += camera_pos;
     }
 
 
@@ -457,16 +458,20 @@ namespace game {
             // Handle firing a bullet (mouse: LEFT-CLICK)
             if (glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_LEFT) == 1) {
                 if (!holding_shoot && firing_cooldown.Finished()) {
+
+                    Weapon* weapon = player->GetWeapon();
+
                     SpawnPlayerBullet();
-                    firing_cooldown.Start(player->GetWeapon()->GetFiringCooldown());
+                    firing_cooldown.Start(weapon->GetFiringCooldown());
 
                     // prevent semi-auto weapons from being shot by holding
-                    if (player->GetWeapon()->IsSemiAuto()) {
+                    if (weapon->IsSemiAuto()) {
                         holding_shoot = true;
                     }
                 }
             }
-            // reset holding_shoot back to false if left-click isn't pressed
+
+            // Reset holding_shoot back to false if left-click isn't pressed
             else { 
                 holding_shoot = false;
             }
@@ -485,17 +490,53 @@ namespace game {
     /*** Update all the game objects ***/
     void Game::Update(double delta_time) {
 
-        // Update the Camera
-        camera_target_pos = player->GetPosition();
-        camera_pos = glm::mix(camera_pos, camera_target_pos, CAMERA_SMOOTHNESS);
 
-        // Update the Player
+            /* CAMERA UPDATES*/
+
+        // apply linear interpolation movement (smooth-cam)
+        camera_target_pos = player->GetPosition();
+        glm::vec3 lerp_camera_pos = glm::mix(camera_pos, camera_target_pos, CAMERA_SMOOTHNESS);
+
+        // Get window dimensions
+        glfwGetWindowSize(window_, &window_width_, &window_height_);
+        float aspect_ratio = static_cast<float>(window_width_) / window_height_;
+
+        // Calculate world-space viewport dimensions at current zoom
+        float viewport_width = 2.0f * CAMERA_X_BOUND * CAMERA_ZOOM;
+        float viewport_height = 2.0f * CAMERA_Y_BOUND * CAMERA_ZOOM;
+
+        // Adjust for aspect ratio, both horizontal and vertical
+        if (aspect_ratio > 1.0f) {
+            viewport_width *= aspect_ratio;
+        }
+        else {
+            viewport_height /= aspect_ratio;
+        }
+
+        // calculate dynamic bounds based on adjusted viewport
+        float dynamic_x_bound = (WORLD_SIZE - viewport_width) * 0.5f;
+        float dynamic_y_bound = (WORLD_SIZE - viewport_height) * 0.5f;
+
+        // ensure bounds don't go negative (if viewport is larger than world)
+        dynamic_x_bound = glm::max(dynamic_x_bound, 0.0f);
+        dynamic_y_bound = glm::max(dynamic_y_bound, 0.0f);
+
+        // clamp the camera position
+        camera_pos.x = glm::clamp(lerp_camera_pos.x, -dynamic_x_bound, dynamic_x_bound);
+        camera_pos.y = glm::clamp(lerp_camera_pos.y, -dynamic_y_bound, dynamic_y_bound);
+
+
+            /* PLAYER UPDATES*/
+
         if (update_flag) {
             if (player->GetHealth() <= 0) {
                 KillPlayer();
             }
             else {
-                player->UpdateTargetAngle(atan2(cursor_pos.y, cursor_pos.x) - (HALF_PI));
+                // Update rotation based on cursor_pos
+                glm::vec3 direction = cursor_pos - player->GetPosition();
+                player->UpdateTargetAngle(atan2(direction.y, direction.x) - (HALF_PI));
+
                 player->Update(delta_time);
                 PlayerShotCheck(delta_time);
             }
@@ -505,7 +546,9 @@ namespace game {
             player->Hide();
         }
         
-        // Update the Enemies
+
+            /* ENEMY UPDATES*/
+
         for (int i = 0; i < enemy_arr.size(); ++i) {
             EnemyGameObject* enemy = enemy_arr[i];
 
@@ -514,17 +557,27 @@ namespace game {
                 delete enemy;
             }
 
+            // skip most updates if the enemy has exploded
             else if (!enemy->IsExploded()) {
 
+                // check if the enemy has died
                 if (enemy->GetHealth() <= 0) {
                     ExplodeEnemy(enemy);
                 }
                 else {
-                    enemy->Update(delta_time);
 
+                    // if not dead, update according to the cold_shock flag
+                    if (player->IsColdShockActive()) {
+                        enemy->Update(delta_time / 2.5);
+                    }
+                    else {
+                        enemy->Update(delta_time);
+                    }
+                    
+                    // misc updates to be called if the player is alive
                     if (update_flag) {
                         if (GunnerEnemy* gunner = dynamic_cast<GunnerEnemy*>(enemy)) {
-                            if (gunner->IsFinished()) {
+                            if (gunner->IsShootCDFinished()) {
                                 SpawnGunnerBullet(gunner);
                             }
                         }
@@ -536,7 +589,9 @@ namespace game {
             }
         }
 
-        // Update Projectiles shot by the player
+
+            /* PLAYER PROJECTILE UPDATES*/
+
         for (int i = 0; i < projectile_arr.size(); ++i) {
             ProjectileGameObject* bullet = projectile_arr[i];
 
@@ -548,7 +603,9 @@ namespace game {
             }
         }
 
-        // Update Projectiles shot by the gunner enemies
+        
+            /* ENEMY PROJECTILE UPDATES*/
+
         for (int i = 0; i < gunner_projectile_arr.size(); ++i) {
             ProjectileGameObject* bullet = gunner_projectile_arr[i];
 
@@ -560,13 +617,17 @@ namespace game {
             }
         }
         
-        // Update the Collectibles
+        
+            /* COLLECTIBLE UPDATES*/
+
         for (int i = 0; i < collectible_arr.size(); ++i) {
             CollectibleGameObject* collectible = collectible_arr[i];
 
             if (collectible->EraseTimerCheck()) {
                 collectible_arr.erase(collectible_arr.begin() + i);
-                am.StopSound(power_up_ambience);
+                if (!collectible->IsCollected()) {
+                    am.StopSound(power_up_ambience);
+                }
                 delete collectible;
             }
 
@@ -574,15 +635,18 @@ namespace game {
                 collectible->Update(delta_time);
 
                 if (CollisionCheck(player, collectible)) {
-                    CollectItem(collectible);
+                    CollectPowerUp(collectible);
                 }
             }
         }
 
-        // Update enemy portals (just visuals)
+
+            /* PORTAL UPDATES*/
+
         for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
             enemy_spawn_arr[i]->Update(delta_time);
         }
+
     }
 
 
@@ -604,10 +668,6 @@ namespace game {
         enemy->SetTexture(tex_[5]); // explosion texture
         enemy->SetScale(glm::vec2(1.8f));
         enemy->StartEraseTimer();
-
-        // add points for killing an enemy
-        player->AddPoints(100);
-        std::cout << "points: " << player->GetPoints() << std::endl;
 
         // play explosion sound
         am.PlaySound(boom_sfx);
@@ -634,8 +694,19 @@ namespace game {
 
                 // check for ray-circle collision
                 if (RayCircleCheck(bullet, enemy, collision_dist)) {
-                    enemy->TakeDamage(bullet->GetDamage());
+                    enemy->TakeDamage(player->GetDamage());
                     am.PlaySound(enemy_hit_sfx);
+
+                    // enemy not alive, big point reward (assigned per enemy)
+                    if (enemy->GetHealth() <= 0) {
+                        player->AddPoints(enemy->GetPointReward());
+                        ExplodeEnemy(enemy);
+                    }
+
+                    // enemy still alive, small point reward
+                    else {
+                        player->AddPoints(SHOT_HIT_POINT_REWARD);
+                    }
                 }
             }
         }
@@ -662,18 +733,27 @@ namespace game {
 
 
     /*** Handle collecting a collectible ***/
-    void Game::CollectItem(CollectibleGameObject* collectible) {
+    void Game::CollectPowerUp(CollectibleGameObject* collectible) {
         collectible->Collect();
 
-        // check which power-up object was picked up
-        if (dynamic_cast<DoublePoints*>(collectible)) {
-            player->SetDoublePoints(true);
-        }
-        else if (dynamic_cast<BulletBoost*>(collectible)) {
-            player->SetBulletBoost(true);
-        }
-        else if (dynamic_cast<ColdShock*>(collectible)) {
-            player->SetColdShock(true);
+        // enable a power-up state depending on the power-up ID
+        int power_up_id = collectible->GetPowerUpID();
+        switch (power_up_id) {
+
+        case 0:
+            // ID = 0 : double points, all points received are doubled
+            player->EnableDoublePoints();
+            break;
+
+        case 1:
+            // ID = 1 : bullet boost, player deals triple damage
+            player->EnableBulletBoost();
+            break;
+
+        case 2:
+            // ID = 2 : cold shock, enemies become much slower
+            player->EnableColdShock();
+            break;
         }
 
         // handle sounds
@@ -704,13 +784,19 @@ namespace game {
         
         // use the RNG section above to determine which enemy to spawn
         switch (random_enemy_index) {
+
         case 1:
+            // Spawn a Gunner
             enemy_arr.push_back(new GunnerEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[1]));
             break;
+
         case 2:
+            // Spawn a Chaser
             enemy_arr.push_back(new ChaserEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[2]));
             break;
+
         case 3:
+            // Spawn a Kamikaze
             enemy_arr.push_back(new KamikazeEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[3]));
             break;
         }
@@ -722,22 +808,13 @@ namespace game {
         std::mt19937 gen(rd()); // RNG setup
 
         // generate a random int to determine which power-up to spawn
-        std::uniform_int_distribution<> dis_type(1, 3);
-        int rand_type = dis_type(gen);
+        std::uniform_int_distribution<> dis_id(0, 2);
+        int rand_id = dis_id(gen);
 
         // setup the new collectible
-        CollectibleGameObject* power_up;
-        switch (rand_type) {
-        case 1:
-            power_up = new DoublePoints(enemy->GetPosition(), sprite_, &sprite_shader_, tex_[8]);
-            break;
-        case 2:
-            power_up = new BulletBoost(enemy->GetPosition(), sprite_, &sprite_shader_, tex_[9]);
-            break;
-        case 3:
-            power_up = new ColdShock(enemy->GetPosition(), sprite_, &sprite_shader_, tex_[10]);
-            break;
-        }
+        CollectibleGameObject* power_up = new CollectibleGameObject(
+            enemy->GetPosition(), sprite_, &sprite_shader_, tex_[8 + rand_id], 0 + rand_id
+        );
         collectible_arr.push_back(power_up);
 
         // generate a random angle, then convert to a vector to be used as velocity
@@ -755,12 +832,13 @@ namespace game {
     /*** Spawn a bullet at the player's position with a velocity/rotation corresponding to the player's ***/
     void Game::SpawnPlayerBullet(void) {
 
-        // pre-define the weapon to reduce calls
+        // pre-definitions to reduce calls and make code prettier
         Weapon* weapon = player->GetWeapon();
+        glm::vec3 player_pos = player->GetPosition();
 
         // create the bullet object and add to collection
         ProjectileGameObject* bullet = new ProjectileGameObject(
-            player->GetPosition(), sprite_, &sprite_shader_, tex_[6], weapon->GetBulletLifespan(), weapon->GetDamage()
+            player_pos, sprite_, &sprite_shader_, tex_[6], weapon->GetBulletLifespan(), weapon->GetDamage()
         );
         projectile_arr.push_back(bullet);
 
@@ -772,7 +850,7 @@ namespace game {
         float random_spread = dis_spread(gen);
 
         // calculate bullet direction with the spread offset
-        glm::vec3 direction = glm::normalize(cursor_pos);
+        glm::vec3 direction = glm::normalize(cursor_pos - player_pos);
         float base_angle = atan2(direction.y, direction.x);
         float spread_angle = base_angle + random_spread;
         glm::vec3 spread_direction = glm::vec3(cos(spread_angle), sin(spread_angle), 0);
@@ -877,15 +955,14 @@ namespace game {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Use aspect ratio to properly scale the window
-        int width, height;
-        glfwGetWindowSize(window_, &width, &height);
+        glfwGetWindowSize(window_, &window_width_, &window_height_);
         glm::mat4 window_scale_matrix;
-        if (width > height) {
-            float aspect_ratio = ((float) width)/((float) height);
-            window_scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f/aspect_ratio, 1.0f, 1.0f));
+        if (window_width_ > window_height_) {
+            float aspect_ratio = ((float) window_width_) / ((float) window_height_);
+            window_scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / aspect_ratio, 1.0f, 1.0f));
         } else {
-            float aspect_ratio = ((float) height)/((float) width);
-            window_scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f/aspect_ratio, 1.0f));
+            float aspect_ratio = ((float) window_height_) / ((float) window_width_);
+            window_scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f / aspect_ratio, 1.0f));
         }
 
         // Set view to zoom out, centered by default at 0,0
@@ -898,25 +975,27 @@ namespace game {
         // Calculate the combined transformation matrix
         glm::mat4 view_matrix = window_scale_matrix * camera_zoom_matrix * camera_translation_matrix;
 
+        // Transparent sprite helper
+        glDepthMask(GL_FALSE);
 
-        // Render all game objects
-        player->Render(view_matrix, current_time_);
-        for (int i = 0; i < enemy_arr.size(); i++) {
-            enemy_arr[i]->Render(view_matrix, current_time_);
-        }
-        for (int i = 0; i < collectible_arr.size(); i++) {
-            collectible_arr[i]->Render(view_matrix, current_time_);
-        }
-        for (int i = 0; i < projectile_arr.size(); i++) {
-            projectile_arr[i]->Render(view_matrix, current_time_);
+        // Render all game objects (order: back to front)
+        background->Render(view_matrix, current_time_);
+        for (int i = 0; i < enemy_spawn_arr.size(); i++) {
+            enemy_spawn_arr[i]->Render(view_matrix, current_time_);
         }
         for (int i = 0; i < gunner_projectile_arr.size(); i++) {
             gunner_projectile_arr[i]->Render(view_matrix, current_time_);
         }
-        for (int i = 0; i < enemy_spawn_arr.size(); i++) {
-            enemy_spawn_arr[i]->Render(view_matrix, current_time_);
+        for (int i = 0; i < projectile_arr.size(); i++) {
+            projectile_arr[i]->Render(view_matrix, current_time_);
         }
-        background->Render(view_matrix, current_time_);
+        for (int i = 0; i < collectible_arr.size(); i++) {
+            collectible_arr[i]->Render(view_matrix, current_time_);
+        }
+        for (int i = 0; i < enemy_arr.size(); i++) {
+            enemy_arr[i]->Render(view_matrix, current_time_);
+        }
+        player->Render(view_matrix, current_time_);
     }
 
 
@@ -952,12 +1031,23 @@ namespace game {
         glBindTexture(GL_TEXTURE_2D, w);
 
         // Load texture from a file to the buffer
-        int width, height;
-        unsigned char* image = SOIL_load_image(fname, &width, &height, 0, SOIL_LOAD_RGBA);
+        int width, height, channels;
+        unsigned char* image = SOIL_load_image(fname, &width, &height, &channels, SOIL_LOAD_AUTO);
+
+        // Error checking
         if (!image){
             std::cout << "Cannot load texture " << fname << std::endl;
+            return;
         }
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+        // Premultiply alpha if needed
+        if (channels == 4) {
+            PremultiplyAlpha(image, width * height);
+        }
+
+        // Determine format
+        GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image);
         SOIL_free_image_data(image);
 
         // Texture Wrapping, Tiled
@@ -967,6 +1057,17 @@ namespace game {
         // Texture Filtering
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+
+
+    /*** Helper function for helping alpha channel rendering ***/
+    void Game::PremultiplyAlpha(unsigned char* image, int pixelCount) {
+        for (int i = 0; i < pixelCount; ++i) {
+            float alpha = image[i * 4 + 3] / 255.0f;
+            image[i * 4] = (unsigned char)(image[i * 4] * alpha);
+            image[i * 4 + 1] = (unsigned char)(image[i * 4 + 1] * alpha);
+            image[i * 4 + 2] = (unsigned char)(image[i * 4 + 2] * alpha);
+        }
     }
 
 

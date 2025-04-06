@@ -11,11 +11,12 @@ uniform sampler2D onetex;
 // Ghost mode declaration
 uniform bool ghost;
 
-void main()
-{
+void main() {
+
     // Sample texture
     vec4 color = texture2D(onetex, uv_interp);
 
+    // Apply ghost mode corrections
     if (ghost) {
         float gray = (color.r + color.g + color.b) / 3.0;
         color.rgb = vec3(gray);
@@ -24,8 +25,8 @@ void main()
     // Assign color to fragment
     gl_FragColor = color;
 
-    // Discard objects that cross the transparency threshold
-    if (color.a < 0.3) {
+    // Discard objects that are too transparent
+    if (color.a < 0.01) {
          discard;
     }
 }

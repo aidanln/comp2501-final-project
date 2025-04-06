@@ -12,6 +12,7 @@ namespace game {
 		// initialize to default values
 		health = 1;
 		damage = 0;
+		point_reward = 0;
 		exploded = false;
 		target_angle = 0.0f;
 		target_pos = glm::vec3(0.0f);
@@ -42,6 +43,8 @@ namespace game {
 		else if (health < 0) {
 			health = 0;
 		}
+		// debug, keep until HUD is added
+		std::cout << "(DMG) hit an enemy for " << recieved_dmg << " damage." << std::endl;
 	}
 
 } // namespace game
