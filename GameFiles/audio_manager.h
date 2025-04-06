@@ -73,6 +73,9 @@ namespace audio_manager {
             // Set whether sound should be looped
             void SetLoop(int index, bool loop);
 
+            // Set a universal volume level
+            void SetMasterGain(float gain);
+
         private:
             // Audio context used by OpenAl
             ALCcontext *context_;
