@@ -136,6 +136,11 @@ namespace game {
 	const float SNIPER_SPREAD = 0.01f;
 	const float SNIPER_SPEED = 35.0f;
 	const bool SNIPER_SEMI = true;
+
+	// Text Aspect Ratio and Offset
+	const float TEXT_SIZE_X = 2.5;
+	const float TEXT_SIZE_Y = 0.8;
+	const glm::vec3 SCORE_TEXT_OFFSET = glm::vec3(-4.45, 3.4, 0);
 }
 
 #endif
