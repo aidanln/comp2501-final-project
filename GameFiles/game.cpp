@@ -183,6 +183,9 @@ namespace game {
             filename = std::string(resources_directory_g).append("/audio/enemy_shoot.wav");
             enemy_shoot_sfx = am.AddSound(filename.c_str());
             am.SetSoundPosition(enemy_shoot_sfx, 0.0, 0.0, 0.0);
+
+            // Set the master volume to a low value to avoid jumpscaring the listener
+            am.SetMasterGain(0.25f);
         }
 
         // Error handling

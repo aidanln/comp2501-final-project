@@ -207,4 +207,14 @@ namespace audio_manager {
         CheckForErrors("Failed to set sound looping flag");
     }
 
+
+    /*** Change the gain of ALL the sounds, ensures the player's ears aren't eviscerated ***/
+    void AudioManager::SetMasterGain(float gain) {
+        // Clamp gain between 0.0 and 1.0
+        gain = std::max(0.0f, std::min(1.0f, gain));
+
+        alListenerf(AL_GAIN, gain);
+        CheckForErrors("Failed to set master gain");
+    }
+
 } // namespace audio_manager;
