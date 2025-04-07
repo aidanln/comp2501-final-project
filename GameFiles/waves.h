@@ -38,7 +38,7 @@ namespace game {
     public:
         WaveControl();
         // get which wave currently being played
-        int GetCurrentWave() const { return current_wave; }
+        int GetCurrentWave() const { return current_wave + 1; }
         // get the actual wave data for current wave
         Wave GetWave() const { return waves[current_wave]; }
         // increment wave counter
@@ -56,4 +56,4 @@ namespace game {
 
 } // namespace game
 
-#endif // PROJECTILE_GAME_OBJECT_H_
+#endif

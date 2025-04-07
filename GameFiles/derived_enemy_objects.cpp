@@ -96,6 +96,7 @@ namespace game {
 		point_reward = CHASER_POINT_REWARD;
 		child1 = new ArmObject(glm::vec3(0.6f, 0.0f, 0.0f), geom, shader, texture);
 		child2 = new ArmObject(glm::vec3(0.3f, 0.0f, 0.0f), geom, shader, texture);
+		child2->SetScale(glm::vec2(1.8f, 0.4f));
 	}
 
 	/*** Delete children from hierarchical chain link ***/

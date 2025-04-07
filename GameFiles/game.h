@@ -159,7 +159,6 @@ namespace game {
         std::vector<ProjectileGameObject*> gunner_projectile_arr;
         std::vector<CollectibleGameObject*> collectible_arr;
         std::vector<ParticleSystem*> particle_arr;
-        GameObject* background;
 
         // Wave control object
         WaveControl waves;

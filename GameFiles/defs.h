@@ -41,7 +41,7 @@ namespace game {
 	// Universal timers
 	const float INTRO_DURATION = 2.3f;
 	const float DEFAULT_ERASE_TIMER = 2.5f;
-	const float ENEMY_SPAWN_DELAY = 5.0f;
+	const float ENEMY_SPAWN_DELAY = 0.5f;
 	
 
 

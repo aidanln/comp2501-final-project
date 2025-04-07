@@ -696,7 +696,7 @@ namespace game {
         hud->SetBottomLeftCorner(glm::vec3(-3.0f, -3.0f, 0.0f) + camera_pos);
         hud->UpdatePoints(std::to_string(player->GetPoints()));
         hud->UpdateEnemyCount(std::to_string(enemies_alive));
-        hud->UpdateWave(std::to_string(1));
+        hud->UpdateWave(std::to_string(waves.GetCurrentWave()));
 
         // bottom right corner
         hud->SetBottomRightCorner(glm::vec3(3.0f, -3.0f, 0.0f) + camera_pos);
