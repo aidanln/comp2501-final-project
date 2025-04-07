@@ -24,6 +24,7 @@ set(HDRS
     text_game_object.h
     sprite.h
     timer.h
+    waves.h
     weapons.h
 )
  
@@ -45,6 +46,7 @@ set(SRCS
     sprite.cpp
     text_game_object.cpp
     timer.cpp
+    waves.cpp
     weapons.cpp
     particle_fragment_shader.glsl
     particle_vertex_shader.glsl

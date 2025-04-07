@@ -98,21 +98,26 @@ namespace game {
 		child2 = new ArmObject(glm::vec3(0.3f, 0.0f, 0.0f), geom, shader, texture);
 	}
 
+	/*** Delete children from hierarchical chain link ***/
 	ChaserEnemy::~ChaserEnemy() {
 		delete child1;
 		delete child2;
 	}
 	
-	/*** Update, moves the chaser using the pursuit method ***/
+	/*** Update, moves the chaser using the pursuit method, updates children based on parent ***/
 	void ChaserEnemy::Update(double delta_time) {
 		EnemyGameObject::Update(delta_time);
 		position_.x += velocity_.x * CHASER_SPEED * delta_time;
 		position_.y += velocity_.y * CHASER_SPEED * delta_time;
-		float angle = atan2(velocity_.y, velocity_.x);  // direction facing
-		child1->UpdateFromParent(position_, angle, 0.05);  // child1 rotates with the body
+		// Direction facing
+		float angle = atan2(velocity_.y, velocity_.x);
+		// Child1 transforms based on body
+		child1->UpdateFromParent(position_, angle, 0.05);
+		// Child2 transforms based on child1
 		child2->UpdateFromParent(child1->GetPosition(), child1->GetLocalAngle(), 0.02);
 	}
 
+	/*** Override render function to render parent and children ***/
 	void ChaserEnemy::Render(const glm::mat4& view_matrix, double current_time) {
 		EnemyGameObject::Render(view_matrix, current_time);
 		child1->Render(view_matrix, current_time);

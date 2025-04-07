@@ -35,14 +35,19 @@ namespace game {
         float time_since_last_shot;
     };
 
+
+    /*
+    * Arm -> children of chaser, is transformed based on parent
+    */
     class ArmObject : public EnemyGameObject {
     public:
         ArmObject(const glm::vec3& offset, Geometry* geom, Shader* shader, const GLuint& texture);
 
         void UpdateFromParent(const glm::vec3& parent_pos, float parent_angle, float lerp_factor);
-        inline float GetLocalAngle() { return local_angle; }
+        inline float GetLocalAngle() const { return local_angle; }
 
     private:
+        // dist from parent
         glm::vec3 offset_from_parent;
         float local_angle = 0.0f;
     };
@@ -67,9 +72,10 @@ namespace game {
         ArmObject* GetChild2() const { return child2; }
 
     private:
-        // No member vars yet
+        // children
         ArmObject* child1;
         ArmObject* child2;
+        // arm bend
         float arm_bend_angle = 0.0f;
     };
 
