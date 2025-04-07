@@ -27,6 +27,8 @@
 #include "projectile_game_object.h"
 #include "weapons.h"
 #include "text_game_object.h"
+#include "particles.h"
+#include "particle_system.h"
 
 #include "defs.h"
 
@@ -126,8 +128,14 @@ namespace game {
         Geometry* sprite_;
         Geometry* tiling_sprite_;
 
+        // Particle geometry
+        Geometry* particles_;
+
         // Shader for rendering sprites in the scene
         Shader sprite_shader_;
+
+        // Shader for rendering particles
+        Shader particle_shader_;
 
         // Shader for rendering texts
         Shader text_shader_;
@@ -146,6 +154,7 @@ namespace game {
         std::vector<ProjectileGameObject*> gunner_projectile_arr;
         std::vector<CollectibleGameObject*> collectible_arr;
         std::vector<TextGameObject*> text_arr;
+        std::vector<ParticleSystem*> particle_arr;
         GameObject* background;
         TextGameObject* score;
 

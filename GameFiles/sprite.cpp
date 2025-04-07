@@ -85,20 +85,21 @@ namespace game {
 
 
     /*** Bind a shader to a piece of geometry ***/
-    void Sprite::SetGeometry(GLuint shader_program)
-    {
+    void Sprite::SetGeometry(GLuint shader_program) {
 
         // No blending
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
-        glDisable(GL_BLEND);
+        glEnable(GL_BLEND);
 
         // Bind buffers
+        
         glBindBuffer(GL_ARRAY_BUFFER, vbo_);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
 
         // Set attributes for shaders
         // Should be consistent with how we created the buffers for the square
+        
         GLint vertex_att = glGetAttribLocation(shader_program, "vertex");
         glVertexAttribPointer(vertex_att, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), 0);
         glEnableVertexAttribArray(vertex_att);
@@ -110,6 +111,7 @@ namespace game {
         GLint tex_att = glGetAttribLocation(shader_program, "uv");
         glVertexAttribPointer(tex_att, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *)(5 * sizeof(GLfloat)));
         glEnableVertexAttribArray(tex_att);
+        
     }
 
 } // namespace game
