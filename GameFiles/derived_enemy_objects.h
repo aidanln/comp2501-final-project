@@ -35,6 +35,18 @@ namespace game {
         float time_since_last_shot;
     };
 
+    class ArmObject : public EnemyGameObject {
+    public:
+        ArmObject(const glm::vec3& offset, Geometry* geom, Shader* shader, const GLuint& texture);
+
+        void UpdateFromParent(const glm::vec3& parent_pos, float parent_angle, float lerp_factor);
+        inline float GetLocalAngle() { return local_angle; }
+
+    private:
+        glm::vec3 offset_from_parent;
+        float local_angle = 0.0f;
+    };
+
 
     /*
     * Chaser -> moves quickly towards the player to hit them and cause damage
@@ -44,12 +56,21 @@ namespace game {
     public:
         // Constructor, has unique default initializations
         ChaserEnemy(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture);
+        ~ChaserEnemy();
 
         // Chaser-specific movement
         void Update(double delta_time) override;
 
+        void ChaserEnemy::Render(const glm::mat4& view_matrix, double current_time);
+
+        ArmObject* GetChild1() const { return child1; }
+        ArmObject* GetChild2() const { return child2; }
+
     private:
         // No member vars yet
+        ArmObject* child1;
+        ArmObject* child2;
+        float arm_bend_angle = 0.0f;
     };
 
 

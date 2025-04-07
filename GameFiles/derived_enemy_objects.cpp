@@ -60,7 +60,28 @@ namespace game {
 		}
 	}
 
+	/***************************/
+	/* ArmObject Definitions */
+	/***************************/
 
+	ArmObject::ArmObject(const glm::vec3& offset, Geometry* geom, Shader* shader, const GLuint& texture)
+		: EnemyGameObject(glm::vec3(0.0f), geom, shader, texture), offset_from_parent(offset) {
+		scale_ = glm::vec2(0.3f);  // small arm
+	}
+
+	void ArmObject::UpdateFromParent(const glm::vec3& parent_pos, float parent_angle, float lerp_factor) {
+		// Apply rotation around parent position
+		local_angle = LerpAngle(local_angle, parent_angle, lerp_factor);
+		float s = sin(local_angle);
+		float c = cos(local_angle);
+
+		glm::vec3 rotated_offset;
+		rotated_offset.x = offset_from_parent.x * c - offset_from_parent.y * s;
+		rotated_offset.y = offset_from_parent.x * s + offset_from_parent.y * c;
+
+		position_ = parent_pos + rotated_offset;
+		SetRotation(local_angle - HALF_PI);
+	}
 
 	/***************************/
 	/* ChaserEnemy Definitions */
@@ -73,14 +94,29 @@ namespace game {
 		health = CHASER_INIT_HP;
 		damage = CHASER_INIT_DMG;
 		point_reward = CHASER_POINT_REWARD;
+		child1 = new ArmObject(glm::vec3(0.6f, 0.0f, 0.0f), geom, shader, texture);
+		child2 = new ArmObject(glm::vec3(0.3f, 0.0f, 0.0f), geom, shader, texture);
 	}
 
+	ChaserEnemy::~ChaserEnemy() {
+		delete child1;
+		delete child2;
+	}
 	
 	/*** Update, moves the chaser using the pursuit method ***/
 	void ChaserEnemy::Update(double delta_time) {
 		EnemyGameObject::Update(delta_time);
 		position_.x += velocity_.x * CHASER_SPEED * delta_time;
 		position_.y += velocity_.y * CHASER_SPEED * delta_time;
+		float angle = atan2(velocity_.y, velocity_.x);  // direction facing
+		child1->UpdateFromParent(position_, angle, 0.05);  // child1 rotates with the body
+		child2->UpdateFromParent(child1->GetPosition(), child1->GetLocalAngle(), 0.02);
+	}
+
+	void ChaserEnemy::Render(const glm::mat4& view_matrix, double current_time) {
+		EnemyGameObject::Render(view_matrix, current_time);
+		child1->Render(view_matrix, current_time);
+		child2->Render(view_matrix, current_time);
 	}
 
 
@@ -124,5 +160,4 @@ namespace game {
 
 		velocity_ = glm::normalize(target_pos - position_);
 	}
-
 }

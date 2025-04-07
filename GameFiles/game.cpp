@@ -699,6 +699,10 @@ namespace game {
     void Game::ExplodeEnemy(EnemyGameObject* enemy) {
 
         // change enemy properties to show it has exploded
+        if (ChaserEnemy* chaser = dynamic_cast<ChaserEnemy*>(enemy)) {
+            chaser->GetChild1()->SetScale(glm::vec2(0.0f));
+            chaser->GetChild2()->SetScale(glm::vec2(0.0f));
+        }
         enemy->Explode();
         enemy->SetTexture(tex_[5]); // explosion texture
         enemy->SetScale(glm::vec2(1.8f));
@@ -816,7 +820,7 @@ namespace game {
         if (spawn_index > 7) {
             spawn_index = 0;
         }
-        
+        enemy_arr.push_back(new ChaserEnemy(glm::vec3(0, 0, 0), sprite_, &sprite_shader_, tex_[2]));
         // use the RNG section above to determine which enemy to spawn
         switch (random_enemy_index) {
 
@@ -1043,9 +1047,11 @@ namespace game {
 
         player->Render(view_matrix, current_time_);
 
+        /*
         for (int i = 0; i < particle_arr.size(); i++) {
             particle_arr[i]->Render(view_matrix, current_time_);
         }
+        */
 
         for (int i = 0; i < text_arr.size(); i++) {
             text_arr[i]->Render(view_matrix, current_time_);
