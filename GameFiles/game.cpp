@@ -217,7 +217,8 @@ namespace game {
             tex_double_points = 8,
             tex_bullet_boost = 9,
             tex_cold_shock = 10,
-            tex_font = 11
+            tex_font = 11,
+            tex_orb = 12
         };
         textures.push_back("/textures/player_ship.png");    // 0,  tex_player
         textures.push_back("/textures/gunner_ship.png");    // 1,  tex_gunner
@@ -231,10 +232,17 @@ namespace game {
         textures.push_back("/textures/bullet_boost.png");   // 9,  tex_bullet_boost
         textures.push_back("/textures/cold_shock.png");     // 10, tex_cold_shock
         textures.push_back("/textures/font.png");           // 11, tex_font
+        textures.push_back("/textures/orb.png");            // 12, tex_orb
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
         player = new PlayerGameObject(glm::vec3(0.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_player]);
+        Particles* particles_ = new Particles();
+        particles_->CreateGeometry(1); // Use 4000 particles
+        ParticleSystem* particles = new ParticleSystem(glm::vec3(-0.5f, 0.0f, 0.0f), particles_, &particle_shader_, tex_[tex_orb], player);
+        particles->SetParticleScale(0.2, 0.2);
+        // particles->SetRotation(HALF_PI*2);
+        particle_arr.push_back(particles);
 
         // Setup 8 enemy spawn points on the outside of the map (represented by portal sprites)
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(16.0f, -9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
@@ -691,6 +699,10 @@ namespace game {
     void Game::ExplodeEnemy(EnemyGameObject* enemy) {
 
         // change enemy properties to show it has exploded
+        if (ChaserEnemy* chaser = dynamic_cast<ChaserEnemy*>(enemy)) {
+            chaser->GetChild1()->SetScale(glm::vec2(0.0f));
+            chaser->GetChild2()->SetScale(glm::vec2(0.0f));
+        }
         enemy->Explode();
         enemy->SetTexture(tex_[5]); // explosion texture
         enemy->SetScale(glm::vec2(1.8f));
@@ -808,7 +820,7 @@ namespace game {
         if (spawn_index > 7) {
             spawn_index = 0;
         }
-        
+        enemy_arr.push_back(new ChaserEnemy(glm::vec3(0, 0, 0), sprite_, &sprite_shader_, tex_[2]));
         // use the RNG section above to determine which enemy to spawn
         switch (random_enemy_index) {
 
@@ -1008,8 +1020,9 @@ namespace game {
 
         // Transparent sprite helper
         glDepthMask(GL_FALSE);
-
+        
         // Render all game objects (order: back to front)
+        
         background->Render(view_matrix, current_time_);
 
         for (int i = 0; i < enemy_spawn_arr.size(); i++) {
@@ -1031,8 +1044,14 @@ namespace game {
         for (int i = 0; i < collectible_arr.size(); i++) {
             collectible_arr[i]->Render(view_matrix, current_time_);
         }
-        
+
         player->Render(view_matrix, current_time_);
+
+        /*
+        for (int i = 0; i < particle_arr.size(); i++) {
+            particle_arr[i]->Render(view_matrix, current_time_);
+        }
+        */
 
         for (int i = 0; i < text_arr.size(); i++) {
             text_arr[i]->Render(view_matrix, current_time_);
