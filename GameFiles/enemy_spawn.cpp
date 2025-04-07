@@ -1,7 +1,5 @@
 // EnemySpawn class definitions, needed for proper functionality
 
-#define GLM_FORCE_RADIANS
-
 #include "enemy_spawn.h"
 
 namespace game {

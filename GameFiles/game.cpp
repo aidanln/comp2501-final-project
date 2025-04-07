@@ -12,7 +12,7 @@ const std::string resources_directory_g = RESOURCES_DIRECTORY;
 const char* window_title_g = "Celestial Onslaught";
 const unsigned int window_width_g = 1200;
 const unsigned int window_height_g = 800;
-const glm::vec4 viewport_background_color_g(0.1, 0.1, 0.1, 1.0);
+const glm::vec3 viewport_background_color_g(0.1, 0.1, 0.1);
 
 namespace game {
 
@@ -74,8 +74,9 @@ namespace game {
             throw(std::runtime_error(std::string("Could not initialize the GLEW library: ") + std::string((const char*)glewGetErrorString(err))));
         }
 
-        // Enable pre-multipled alpha blending
+        // Enable pre-multipled alpha blending so that transparency in .png files is shown correctly
         glEnable(GL_BLEND);
+        // glEnable(GL_DEPTH_TEST);
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         // Set event callbacks
@@ -125,6 +126,7 @@ namespace game {
         camera_target_pos = glm::vec3(0.0f);
         cursor_pos = glm::vec3(0.0f);
         spawn_index = 0;
+        enemies_alive = 0;
 
         // Audio Setup
         InitAudio();
@@ -218,7 +220,11 @@ namespace game {
             tex_bullet_boost = 9,
             tex_cold_shock = 10,
             tex_font = 11,
-            tex_orb = 12
+            tex_vignette = 12,
+            tex_dp_icon = 13,
+            tex_bb_icon = 14,
+            tex_cs_icon = 15,
+            tex_orb = 16
         };
         textures.push_back("/textures/player_ship.png");    // 0,  tex_player
         textures.push_back("/textures/gunner_ship.png");    // 1,  tex_gunner
@@ -232,7 +238,11 @@ namespace game {
         textures.push_back("/textures/bullet_boost.png");   // 9,  tex_bullet_boost
         textures.push_back("/textures/cold_shock.png");     // 10, tex_cold_shock
         textures.push_back("/textures/font.png");           // 11, tex_font
-        textures.push_back("/textures/orb.png");            // 12, tex_orb
+        textures.push_back("/textures/vignette.png");       // 12, tex_vignette
+        textures.push_back("/textures/dp_icon.png");        // 13, tex_dp_icon
+        textures.push_back("/textures/bb_icon.png");        // 14, tex_bb_icon
+        textures.push_back("/textures/cs_icon.png");        // 15, tex_cs_icon
+        textures.push_back("/textures/orb.png");            // 16, tex_orb
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
@@ -255,22 +265,19 @@ namespace game {
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(9.0f, -16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
 
         // DEBUG, start with all the power-ups spawned in for testing purposes
-        /*
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(-4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_double_points], 0));
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_bullet_boost], 1));
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_cold_shock], 2));
-        */
 
-        // Setup HUD stuff (move to dedicated object later)
-        score = new TextGameObject(glm::vec3(0.0f, -2.0f, 0.0f), sprite_, &text_shader_, tex_[tex_font]);
-        score->SetTextScale(TEXT_SIZE_X, TEXT_SIZE_Y);
-        score->SetPosition(camera_pos + SCORE_TEXT_OFFSET);
-        std::string string = "Points: " + std::to_string(player->GetPoints());
-        score->SetText(string);
-        text_arr.push_back(score);
+        // Setup the HUD
+        hud = new HUD(sprite_, &text_shader_, &sprite_shader_, tex_[tex_font], tex_[tex_dp_icon], tex_[tex_bb_icon], tex_[tex_cs_icon]);
+
+        // Setup the vignette (lighting effect)
+        vignette = new GameObject(glm::vec3(0.0f), sprite_, &sprite_shader_, tex_[tex_vignette]);
+        vignette->SetScale(glm::vec2(WORLD_SIZE));
 
         // Setup background
-        background = new GameObject(glm::vec3(0.0f, 0.0f, 0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
+        background = new GameObject(glm::vec3(0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(WORLD_SIZE));
 
         // Define all the Weapons
@@ -283,7 +290,7 @@ namespace game {
         sniper  = new Weapon
         (SNIPER_DMG,    SNIPER_SHOOT_CD,    SNIPER_LIFESPAN,    SNIPER_SPREAD,  SNIPER_SPEED,   SNIPER_SEMI);
 
-        // Pistol is the default weapon
+        // set the default weapon (pistol)
         player->SetWeapon(pistol);
     }
 
@@ -291,8 +298,11 @@ namespace game {
     /*** Destroy the game world, pseudo destructor ***/
     void Game::DestroyGameWorld(void) {
 
-        // delete player
+        // delete single pointer game objects
         delete player;
+        delete background;
+        delete vignette;
+        delete hud;
 
         // delete enemies
         for (int i = 0; i < enemy_arr.size(); ++i) {
@@ -523,20 +533,18 @@ namespace game {
     void Game::Update(double delta_time) {
 
 
-            /* CAMERA UPDATES*/
+            /* CAMERA and LIGHTING UPDATES*/
 
         // apply linear interpolation movement (smooth-cam)
         camera_target_pos = player->GetPosition();
         glm::vec3 lerp_camera_pos = glm::mix(camera_pos, camera_target_pos, CAMERA_SMOOTHNESS);
 
-        // Get window dimensions
-        float aspect_ratio = static_cast<float>(window_width_) / window_height_;
-
-        // Calculate world-space viewport dimensions at current zoom
+        // calculate viewport-related variables
         float viewport_width = 2.0f * CAMERA_X_BOUND * CAMERA_ZOOM;
         float viewport_height = 2.0f * CAMERA_Y_BOUND * CAMERA_ZOOM;
 
-        // Adjust for aspect ratio, both horizontal and vertical
+        // adjust the viewport based on aspect ratio
+        float aspect_ratio = static_cast<float>(window_width_) / window_height_;
         if (aspect_ratio > 1.0f) {
             viewport_width *= aspect_ratio;
         }
@@ -552,9 +560,12 @@ namespace game {
         dynamic_x_bound = glm::max(dynamic_x_bound, 0.0f);
         dynamic_y_bound = glm::max(dynamic_y_bound, 0.0f);
 
-        // clamp the camera position
+        // clamp the camera position based on the dynamic bounds
         camera_pos.x = glm::clamp(lerp_camera_pos.x, -dynamic_x_bound, dynamic_x_bound);
         camera_pos.y = glm::clamp(lerp_camera_pos.y, -dynamic_y_bound, dynamic_y_bound);
+
+        // move the vignette with the player
+        vignette->SetPosition(player->GetPosition());
 
 
             /* PLAYER UPDATES */
@@ -576,7 +587,7 @@ namespace game {
         if (player->EraseTimerCheck()) {
             player->Hide();
         }
-        
+
 
             /* ENEMY UPDATES */
 
@@ -678,10 +689,43 @@ namespace game {
             enemy_spawn_arr[i]->Update(delta_time);
         }
 
-            /* TEXT UPDATES */
-        score->SetPosition(camera_pos + SCORE_TEXT_OFFSET);
-        std::string string = "Points: " + std::to_string(player->GetPoints());
-        score->SetText(string);
+
+            /* HUD UPDATES */
+
+        // bottom left corner
+        hud->SetBottomLeftCorner(glm::vec3(-3.0f, -3.0f, 0.0f) + camera_pos);
+        hud->UpdatePoints(std::to_string(player->GetPoints()));
+        hud->UpdateEnemyCount(std::to_string(enemies_alive));
+        hud->UpdateWave(std::to_string(1));
+
+        // bottom right corner
+        hud->SetBottomRightCorner(glm::vec3(3.0f, -3.0f, 0.0f) + camera_pos);
+        hud->UpdatePowerUps(
+            player->IsDoublePointsActive(),
+            player->IsBulletBoostActive(),
+            player->IsColdShockActive()
+        );
+        hud->UpdateHealth(std::to_string(player->GetHealth()));
+
+        // top right corner, fps only
+        hud->SetTopRightCorner(glm::vec3(3.0f, 3.0f, 0.0f) + camera_pos);
+        if (delta_time > 0) {
+            int fps = std::floor(1 / delta_time);
+            if (FPS_CAP != 0 && fps > FPS_CAP) { 
+                fps = FPS_CAP;
+            }
+            hud->UpdateFPS(std::to_string(fps));
+        }
+
+        // top left corner, fps only
+        hud->SetTopLeftCorner(glm::vec3(-3.0f, 3.0f, 0.0f) + camera_pos);
+        hud->UpdateTime(std::to_string(glfwGetTime()));
+
+        // info segments, placeholders for now
+        glm::vec3 offset(0.0f, 2.2f, 0.0f);
+        hud->SetUnderPlayer(camera_pos - offset);
+        hud->UpdateTopInfo("example top info");
+        hud->UpdateBottomInfo("example bottom info");
     }
 
 
@@ -719,6 +763,9 @@ namespace game {
         if (dis(gen) <= POWER_UP_SPAWN_CHANCE) {
             SpawnCollectible(enemy);
         }
+
+        // decrement the tracker
+        enemies_alive--;
     }
 
 
@@ -883,6 +930,9 @@ namespace game {
             }
             break;
         }
+
+        // increment the corresponding tracker
+        enemies_alive++;
     }
 
 
@@ -1036,7 +1086,7 @@ namespace game {
             viewport_background_color_g.r,
             viewport_background_color_g.g,
             viewport_background_color_g.b,
-            viewport_background_color_g.a
+            0.0
         );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1049,7 +1099,7 @@ namespace game {
             window_scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / aspect_ratio, 1.0f, 1.0f));
         }
         else {
-            window_scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f / aspect_ratio, 1.0f));
+            window_scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f / (1.0f / aspect_ratio), 1.0f));
         }
 
         // Set view to zoom out, centered by default at 0,0
@@ -1069,37 +1119,37 @@ namespace game {
         
         background->Render(view_matrix, current_time_);
 
-        for (int i = 0; i < enemy_spawn_arr.size(); i++) {
+        for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
             enemy_spawn_arr[i]->Render(view_matrix, current_time_);
         }
 
-        for (int i = 0; i < gunner_projectile_arr.size(); i++) {
+        for (int i = 0; i < gunner_projectile_arr.size(); ++i) {
             gunner_projectile_arr[i]->Render(view_matrix, current_time_);
         }
 
-        for (int i = 0; i < projectile_arr.size(); i++) {
+        for (int i = 0; i < projectile_arr.size(); ++i) {
             projectile_arr[i]->Render(view_matrix, current_time_);
         }
 
-        for (int i = 0; i < enemy_arr.size(); i++) {
+        for (int i = 0; i < enemy_arr.size(); ++i) {
             enemy_arr[i]->Render(view_matrix, current_time_);
         }
 
-        for (int i = 0; i < collectible_arr.size(); i++) {
+        for (int i = 0; i < collectible_arr.size(); ++i) {
             collectible_arr[i]->Render(view_matrix, current_time_);
         }
 
         player->Render(view_matrix, current_time_);
+
+        vignette->Render(view_matrix, current_time_);
+
+        hud->RenderAll(view_matrix, current_time_);
 
         /*
         for (int i = 0; i < particle_arr.size(); i++) {
             particle_arr[i]->Render(view_matrix, current_time_);
         }
         */
-
-        for (int i = 0; i < text_arr.size(); i++) {
-            text_arr[i]->Render(view_matrix, current_time_);
-        }
 
         // Set back to true, prevents the resize bug from occurring
         glDepthMask(GL_TRUE);
@@ -1155,7 +1205,7 @@ namespace game {
         unsigned char* image = SOIL_load_image(fname, &width, &height, &channels, SOIL_LOAD_AUTO);
 
         // Error checking
-        if (!image){
+        if (!image) {
             std::cout << "Cannot load texture " << fname << std::endl;
             return;
         }

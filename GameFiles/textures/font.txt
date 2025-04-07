@@ -1,0 +1,5 @@
+Source:
+Oliver Van Kaick UIDemo Sprite "font.png", edited to remove background
+
+License:
+Not sure

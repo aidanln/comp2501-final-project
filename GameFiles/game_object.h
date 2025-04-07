@@ -41,8 +41,8 @@ namespace game {
             inline const glm::vec3& GetAcceleration(void) const { return acceleration_; }
             inline bool IsGhost() const { return ghost_; }
             inline float GetRotation(void) const { return angle_; }
-            const glm::vec3& GetBearing(void) const;
-            const glm::vec3& GetRight(void) const;
+            glm::vec3 GetBearing(void) const;
+            glm::vec3 GetRight(void) const;
 
             // Setters
             inline void SetPosition(const glm::vec3& position) { position_ = position; }

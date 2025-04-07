@@ -40,7 +40,9 @@ namespace game {
 
         // Power-up state handlers
         void EnableDoublePoints(void);
+        inline bool IsDoublePointsActive(void) const { return double_points; }
         void EnableBulletBoost(void);
+        inline bool IsBulletBoostActive(void) const { return bullet_boost; }
         void EnableColdShock(void);
         inline bool IsColdShockActive(void) const { return cold_shock; }
 

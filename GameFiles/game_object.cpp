@@ -61,14 +61,14 @@ namespace game {
 
 
     /*** Get the direction an object is facing towards ***/
-    const glm::vec3& GameObject::GetBearing(void) const {
+    glm::vec3 GameObject::GetBearing(void) const {
         glm::vec3 dir(cos(angle_) - HALF_PI, sin(angle_) - HALF_PI, 0.0);
         return dir;
     }
 
 
     /*** Get the right side of an object ***/
-    const glm::vec3& GameObject::GetRight(void) const {
+    glm::vec3 GameObject::GetRight(void) const {
         float pi_over_two = HALF_PI;
         glm::vec3 dir(cos(angle_ - pi_over_two), sin(angle_ - pi_over_two), 0.0);
         return dir;
