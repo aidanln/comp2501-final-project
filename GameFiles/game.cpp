@@ -12,7 +12,7 @@ const std::string resources_directory_g = RESOURCES_DIRECTORY;
 const char* window_title_g = "Celestial Onslaught";
 const unsigned int window_width_g = 1200;
 const unsigned int window_height_g = 800;
-const glm::vec3 viewport_background_color_g(0.1, 0.1, 0.1);
+const glm::vec4 viewport_background_color_g(0.1, 0.1, 0.1, 1.0);
 
 namespace game {
 
@@ -47,6 +47,9 @@ namespace game {
         // Set whether window can be resized
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
+        // Scale to the monitor to make the window resolution agnostic
+        glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);
+
         // Create a window and its OpenGL context
         window_ = glfwCreateWindow(window_width_g, window_height_g, window_title_g, NULL, NULL);
         if (!window_) {
@@ -54,12 +57,14 @@ namespace game {
             throw(std::runtime_error(std::string("Could not create window")));
         }
 
-        // Initalize the window size tracking member vars
-        window_width_ = window_width_g;
-        window_height_ = window_height_g;
-
         // Make the window's OpenGL context the current one
         glfwMakeContextCurrent(window_);
+
+        // Store the Game instance in GLFWwindow's user data for callbacks
+        glfwSetWindowUserPointer(window_, this);
+
+        // Initialize window size with framebuffer size, not screen coordinates
+        glfwGetFramebufferSize(window_, &window_width_, &window_height_);
 
         // Initialize the GLEW library to access OpenGL extensions
         // Need to do it after initializing an OpenGL context
@@ -185,7 +190,7 @@ namespace game {
             am.SetSoundPosition(enemy_shoot_sfx, 0.0, 0.0, 0.0);
 
             // Set the master volume to a low value to avoid jumpscaring the listener
-            am.SetMasterGain(0.25f);
+            am.SetMasterGain(MASTER_VOLUME);
         }
 
         // Error handling
@@ -247,12 +252,15 @@ namespace game {
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_bullet_boost], 1));
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_cold_shock], 2));
         */
+
+        // Setup HUD stuff (move to dedicated object later)
         score = new TextGameObject(glm::vec3(0.0f, -2.0f, 0.0f), sprite_, &text_shader_, tex_[tex_font]);
         score->SetTextScale(TEXT_SIZE_X, TEXT_SIZE_Y);
         score->SetPosition(camera_pos + SCORE_TEXT_OFFSET);
         std::string string = "Points: " + std::to_string(player->GetPoints());
         score->SetText(string);
         text_arr.push_back(score);
+
         // Setup background
         background = new GameObject(glm::vec3(0.0f, 0.0f, 0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(WORLD_SIZE));
@@ -324,15 +332,19 @@ namespace game {
 
         // hang until the intro timer is done
         while (!intro_timer.Finished()) {
+
+            if (glfwWindowShouldClose(window_)) { break; }
+
+            // from MainLoop()
             double current_time = glfwGetTime();
             double delta_time = current_time - last_time;
             last_time = current_time;
 
-            // from MainLoop()
             glfwPollEvents();
             HandleControls(delta_time);
             Render();
             glfwSwapBuffers(window_);
+
             if (FPS_CAP != 0) {
                 while (1 / delta_time > FPS_CAP) {
                     delta_time = glfwGetTime() - last_time;
@@ -397,42 +409,6 @@ namespace game {
     }
 
 
-    /*** Get the coordinates of the mouse cursor in the gameworld ***/
-    void Game::UpdateCursorPosition(void) {
-
-        // initialize cursor position (relative to monitor) and window size
-        double mouse_x, mouse_y;
-        glfwGetCursorPos(window_, &mouse_x, &mouse_y);
-        glfwGetWindowSize(window_, &window_width_, &window_height_);
-
-        // bounds check, abort if the mouse is outside the window
-        if (mouse_x < 0 || mouse_x > window_width_ || mouse_y < 0 || mouse_y > window_height_) {
-            return;
-        }
-
-        // cast width/height to float and initialize cursor position (relative to game world)
-        float width = static_cast<float>(window_width_);
-        float height = static_cast<float>(window_height_);
-
-        // case 1: handle horizontal aspect ratio
-        if (width >= height) {
-            float aspect_ratio = width / height;
-            cursor_pos.x = ((2.0f * mouse_x - width) * aspect_ratio) / (width * CAMERA_ZOOM);
-            cursor_pos.y = (-2.0f * mouse_y + height) / (height * CAMERA_ZOOM);
-        }
-
-        // case 2: handle vertical aspect ratio
-        else {
-            float aspect_ratio = height / width;
-            cursor_pos.x = (2.0f * mouse_x - width) / (width * CAMERA_ZOOM);
-            cursor_pos.y = ((-2.0f * mouse_y + height) * aspect_ratio) / (height * CAMERA_ZOOM);
-        }
-
-        // convert to world coordinates by applying the camera offset
-        cursor_pos += camera_pos;
-    }
-
-
     /*** Handle player inputs ***/
     void Game::HandleControls(double delta_time) {
 
@@ -485,7 +461,7 @@ namespace game {
             }
 
             // Reset holding_shoot back to false if left-click isn't pressed
-            else { 
+            else {
                 holding_shoot = false;
             }
 
@@ -500,6 +476,41 @@ namespace game {
     }
 
 
+    /*** Get the coordinates of the mouse cursor in the gameworld ***/
+    void Game::UpdateCursorPosition(void) {
+
+        // initialize cursor position (relative to monitor) and window size
+        double mouse_x, mouse_y;
+        glfwGetCursorPos(window_, &mouse_x, &mouse_y);
+
+        // bounds check, abort if the mouse is outside the window
+        if (mouse_x < 0 || mouse_x > window_width_ || mouse_y < 0 || mouse_y > window_height_) {
+            return;
+        }
+
+        // cast width/height to float and initialize cursor position (relative to game world)
+        float width = static_cast<float>(window_width_);
+        float height = static_cast<float>(window_height_);
+
+        // case 1: handle horizontal aspect ratio
+        if (width >= height) {
+            float aspect_ratio = width / height;
+            cursor_pos.x = ((2.0f * mouse_x - width) * aspect_ratio) / (width * CAMERA_ZOOM);
+            cursor_pos.y = (-2.0f * mouse_y + height) / (height * CAMERA_ZOOM);
+        }
+
+        // case 2: handle vertical aspect ratio
+        else {
+            float aspect_ratio = height / width;
+            cursor_pos.x = (2.0f * mouse_x - width) / (width * CAMERA_ZOOM);
+            cursor_pos.y = ((-2.0f * mouse_y + height) * aspect_ratio) / (height * CAMERA_ZOOM);
+        }
+
+        // convert to world coordinates by applying the camera offset
+        cursor_pos += camera_pos;
+    }
+
+
     /*** Update all the game objects ***/
     void Game::Update(double delta_time) {
 
@@ -511,7 +522,6 @@ namespace game {
         glm::vec3 lerp_camera_pos = glm::mix(camera_pos, camera_target_pos, CAMERA_SMOOTHNESS);
 
         // Get window dimensions
-        glfwGetWindowSize(window_, &window_width_, &window_height_);
         float aspect_ratio = static_cast<float>(window_width_) / window_height_;
 
         // Calculate world-space viewport dimensions at current zoom
@@ -966,19 +976,23 @@ namespace game {
     void Game::Render(void) {
 
         // Clear background
-        glClearColor(viewport_background_color_g.r,
-                     viewport_background_color_g.g,
-                     viewport_background_color_g.b, 0.0);
+        glClearColor(
+            viewport_background_color_g.r,
+            viewport_background_color_g.g,
+            viewport_background_color_g.b,
+            viewport_background_color_g.a
+        );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Use aspect ratio to properly scale the window
-        glfwGetWindowSize(window_, &window_width_, &window_height_);
+        // Use member variables for aspect ratio
+        float aspect_ratio = static_cast<float>(window_width_) / window_height_;
+
+        // Calculate window_scale_matrix using stored dimensions and aspect ratio
         glm::mat4 window_scale_matrix;
-        if (window_width_ > window_height_) {
-            float aspect_ratio = ((float) window_width_) / ((float) window_height_);
+        if (aspect_ratio > 1.0f) {
             window_scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / aspect_ratio, 1.0f, 1.0f));
-        } else {
-            float aspect_ratio = ((float) window_height_) / ((float) window_width_);
+        }
+        else {
             window_scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f / aspect_ratio, 1.0f));
         }
 
@@ -997,32 +1011,55 @@ namespace game {
 
         // Render all game objects (order: back to front)
         background->Render(view_matrix, current_time_);
+
         for (int i = 0; i < enemy_spawn_arr.size(); i++) {
             enemy_spawn_arr[i]->Render(view_matrix, current_time_);
         }
+
         for (int i = 0; i < gunner_projectile_arr.size(); i++) {
             gunner_projectile_arr[i]->Render(view_matrix, current_time_);
         }
+
         for (int i = 0; i < projectile_arr.size(); i++) {
             projectile_arr[i]->Render(view_matrix, current_time_);
         }
-        for (int i = 0; i < collectible_arr.size(); i++) {
-            collectible_arr[i]->Render(view_matrix, current_time_);
-        }
+
         for (int i = 0; i < enemy_arr.size(); i++) {
             enemy_arr[i]->Render(view_matrix, current_time_);
         }
+
+        for (int i = 0; i < collectible_arr.size(); i++) {
+            collectible_arr[i]->Render(view_matrix, current_time_);
+        }
+        
+        player->Render(view_matrix, current_time_);
+
         for (int i = 0; i < text_arr.size(); i++) {
             text_arr[i]->Render(view_matrix, current_time_);
         }
-        player->Render(view_matrix, current_time_);
+
+        // Set back to true, prevents the resize bug from occurring
+        glDepthMask(GL_TRUE);
     }
 
 
     /*** Handle Window Resizing ***/
     void Game::ResizeCallback(GLFWwindow* window, int width, int height) {
+
+        // Pause rendering until the resize is complete
+        glfwMakeContextCurrent(window);
+        glFinish();
+
         // Set OpenGL viewport based on framebuffer width and height
         glViewport(0, 0, width, height);
+        glScissor(0, 0, width, height);
+
+        // Update Game instance's window dimensions
+        Game* game = static_cast<Game*>(glfwGetWindowUserPointer(window));
+        if (game) {
+            game->window_width_ = width;
+            game->window_height_ = height;
+        }
     }
 
 
