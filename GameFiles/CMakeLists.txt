@@ -17,6 +17,8 @@ set(HDRS
     game.h
     game_object.h
     hud.h
+    particles.h
+    particle_system.h
     player_game_object.h
     projectile_game_object.h
     shader.h
@@ -24,6 +26,7 @@ set(HDRS
     text_game_object.h
     sprite.h
     timer.h
+    waves.h
     weapons.h
 )
  
@@ -39,13 +42,18 @@ set(SRCS
     game_object.cpp
     hud.cpp
     main.cpp
+    particles.cpp
+    particle_system.cpp
     player_game_object.cpp
     projectile_game_object.cpp
     shader.cpp
     sprite.cpp
     text_game_object.cpp
     timer.cpp
+    waves.cpp
     weapons.cpp
+    particle_fragment_shader.glsl
+    particle_vertex_shader.glsl
     sprite_vertex_shader.glsl
     sprite_fragment_shader.glsl
     text_fragment_shader.glsl

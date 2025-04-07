@@ -223,7 +223,8 @@ namespace game {
             tex_vignette = 12,
             tex_dp_icon = 13,
             tex_bb_icon = 14,
-            tex_cs_icon = 15
+            tex_cs_icon = 15,
+            tex_orb = 16
         };
         textures.push_back("/textures/player_ship.png");    // 0,  tex_player
         textures.push_back("/textures/gunner_ship.png");    // 1,  tex_gunner
@@ -241,10 +242,17 @@ namespace game {
         textures.push_back("/textures/dp_icon.png");        // 13, tex_dp_icon
         textures.push_back("/textures/bb_icon.png");        // 14, tex_bb_icon
         textures.push_back("/textures/cs_icon.png");        // 15, tex_cs_icon
+        textures.push_back("/textures/orb.png");            // 16, tex_orb
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
         player = new PlayerGameObject(glm::vec3(0.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_player]);
+        Particles* particles_ = new Particles();
+        particles_->CreateGeometry(1); // Use 4000 particles
+        ParticleSystem* particles = new ParticleSystem(glm::vec3(-0.5f, 0.0f, 0.0f), particles_, &particle_shader_, tex_[tex_orb], player);
+        particles->SetParticleScale(0.2, 0.2);
+        // particles->SetRotation(HALF_PI*2);
+        particle_arr.push_back(particles);
 
         // Setup 8 enemy spawn points on the outside of the map (represented by portal sprites)
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(16.0f, -9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
@@ -735,6 +743,10 @@ namespace game {
     void Game::ExplodeEnemy(EnemyGameObject* enemy) {
 
         // change enemy properties to show it has exploded
+        if (ChaserEnemy* chaser = dynamic_cast<ChaserEnemy*>(enemy)) {
+            chaser->GetChild1()->SetScale(glm::vec2(0.0f));
+            chaser->GetChild2()->SetScale(glm::vec2(0.0f));
+        }
         enemy->Explode();
         enemy->SetTexture(tex_[5]); // explosion texture
         enemy->SetScale(glm::vec2(1.8f));
@@ -842,9 +854,42 @@ namespace game {
 
         // generate a random number for choosing the enemy to be spawned
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> temp_dis(1, 3);
-        int random_enemy_index = temp_dis(gen);
+        int gunner = 1, chaser = 2, kamikaze = 3;
+        bool exclude_chaser = false;
+        bool exclude_gunner = false;
+        bool exclude_kamikaze = false;
 
+        // Determine which numbers to exclude
+        std::vector<int> possible_enemies;
+
+        // pick which enemies to spawn
+
+        if (!exclude_gunner && waves.GetWave().GetGunnerCount() > 0) {
+            possible_enemies.push_back(gunner);
+        }
+        if (!exclude_chaser && waves.GetWave().GetChaserCount() > 0) {
+            possible_enemies.push_back(chaser);
+        }
+        if (!exclude_kamikaze && waves.GetWave().GetKamikazeCount() > 0) {
+            possible_enemies.push_back(kamikaze);
+        }
+
+        // next wave if no enemies to spawn
+
+        if (possible_enemies.empty()) {
+            waves.IncrementWave();
+            std::cout << "Wave complete." << std::endl;
+            exclude_gunner = false;
+            exclude_chaser = false;
+            exclude_kamikaze = false;
+            return;
+        }
+
+
+        // random distribution based on which enemies are left to spawn
+        std::uniform_int_distribution<> temp_dis(0, possible_enemies.size() - 1);
+        int random_enemy_index = possible_enemies[temp_dis(gen)];
+        // std::cout << "Selected enemy: " << random_enemy_index << std::endl;
         // get coordinates for the spawn based on spawn portals
         glm::vec3 spawn_pos = enemy_spawn_arr[spawn_index]->GetPosition();
 
@@ -855,23 +900,34 @@ namespace game {
         if (spawn_index > 7) {
             spawn_index = 0;
         }
-        
+        // enemy_arr.push_back(new ChaserEnemy(glm::vec3(0, 0, 0), sprite_, &sprite_shader_, tex_[2]));
         // use the RNG section above to determine which enemy to spawn
         switch (random_enemy_index) {
-
         case 1:
             // Spawn a Gunner
             enemy_arr.push_back(new GunnerEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[1]));
+            waves.DecrementEnemyCount(1);
+            if (waves.GetWave().GetGunnerCount() == 0) {
+                exclude_chaser = true;
+            }
             break;
 
         case 2:
             // Spawn a Chaser
             enemy_arr.push_back(new ChaserEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[2]));
+            waves.DecrementEnemyCount(2);
+            if (waves.GetWave().GetChaserCount() == 0) {
+                exclude_gunner = true;
+            }
             break;
 
         case 3:
             // Spawn a Kamikaze
             enemy_arr.push_back(new KamikazeEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[3]));
+            waves.DecrementEnemyCount(3);
+            if (waves.GetWave().GetKamikazeCount() == 0) {
+                exclude_kamikaze = true;
+            }
             break;
         }
 
@@ -1058,8 +1114,9 @@ namespace game {
 
         // Transparent sprite helper
         glDepthMask(GL_FALSE);
-
+        
         // Render all game objects (order: back to front)
+        
         background->Render(view_matrix, current_time_);
 
         for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
@@ -1081,12 +1138,18 @@ namespace game {
         for (int i = 0; i < collectible_arr.size(); ++i) {
             collectible_arr[i]->Render(view_matrix, current_time_);
         }
-        
+
         player->Render(view_matrix, current_time_);
 
         vignette->Render(view_matrix, current_time_);
 
         hud->RenderAll(view_matrix, current_time_);
+
+        /*
+        for (int i = 0; i < particle_arr.size(); i++) {
+            particle_arr[i]->Render(view_matrix, current_time_);
+        }
+        */
 
         // Set back to true, prevents the resize bug from occurring
         glDepthMask(GL_TRUE);
