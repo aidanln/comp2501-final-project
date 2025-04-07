@@ -1,8 +1,12 @@
+// TextGameObject class declarations, facilitates text rendering via strings
+
 #ifndef TEXT_GAME_OBJECT_H_
 #define TEXT_GAME_OBJECT_H_
 
-#include <string>
+#define GLM_FORCE_RADIANS
 
+#include <string>
+#include <glm/gtc/matrix_transform.hpp>
 #include "game_object.h"
 
 namespace game {
@@ -13,9 +17,9 @@ namespace game {
         public:
             TextGameObject(const glm::vec3 &position, Geometry *geom, Shader *shader, GLuint texture);
 
-            // Text to be displayed
-            std::string GetText(void) const;
-            void SetText(std::string text);
+            // Text Getter and Setter
+            inline std::string GetText(void) const { return text_; }
+            inline void SetText(std::string text) { text_ = text; }
 
             // Render function for the text
             void Render(const glm::mat4& view_matrix, double current_time) override;
@@ -25,8 +29,8 @@ namespace game {
             std::string text_;
             float scale_x, scale_y;
 
-    }; // class TextGameObject
+    };
 
-} // namespace game
+}
 
 #endif // TEXT_GAME_OBJECT_H_

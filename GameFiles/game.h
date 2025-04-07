@@ -62,11 +62,11 @@ namespace game {
 
             /* PRIVATE MEMBER FUNCTIONS */
 
-        // Update the cursor tracker variable to be accurate each tick
-        void UpdateCursorPosition(void);
-
         // Handle user input
         void HandleControls(double delta_time);
+
+        // Update the cursor tracker variable to be accurate each tick
+        void UpdateCursorPosition(void);
 
         // Master Update function, updates all the game objects
         void Update(double delta_time);

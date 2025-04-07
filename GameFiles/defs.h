@@ -22,6 +22,7 @@ namespace game {
 	// Performance related
 	const unsigned short int MAX_ENEMIES = 24;	// never exceed this many enemies spawned at once
 	const unsigned short int FPS_CAP = 180;		// set to 0 to uncap
+	const float MASTER_VOLUME = 0.2f;			// 1.0 = max, 0.0 = muted
 
 	// Math constants
 	const float PI = glm::pi<float>();
