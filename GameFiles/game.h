@@ -29,6 +29,7 @@
 #include "text_game_object.h"
 #include "particles.h"
 #include "particle_system.h"
+#include "waves.h"
 
 #include "defs.h"
 
@@ -157,6 +158,9 @@ namespace game {
         std::vector<ParticleSystem*> particle_arr;
         GameObject* background;
         TextGameObject* score;
+
+        // Wave control object
+        WaveControl waves;
 
         // Weapon Object Storage, entity object for PlayerGameObject
         Weapon* pistol;
