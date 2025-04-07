@@ -8,8 +8,7 @@ namespace game {
     TextGameObject::TextGameObject(const glm::vec3 &position, Geometry *geom, Shader *shader, GLuint texture)
         : GameObject(position, geom, shader, texture) {
         text_ = "";
-        scale_x = 0;
-        scale_y = 0;
+        scale_ = glm::vec2(3.0f, 1.0f);
     }
 
 
@@ -23,7 +22,7 @@ namespace game {
         shader_->SetUniformMat4("view_matrix", view_matrix);
 
         // Setup the scaling matrix for the shader
-        glm::mat4 scaling_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale_x, scale_y, 1.0));
+        glm::mat4 scaling_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale_.x, scale_.y, 1.0));
 
         // Setup the rotation matrix for the shader
         glm::mat4 rotation_matrix = glm::rotate(glm::mat4(1.0f), angle_, glm::vec3(0.0, 0.0, 1.0));
@@ -43,18 +42,19 @@ namespace game {
         // Bind the entity's texture
         glBindTexture(GL_TEXTURE_2D, texture_);
 
-        // Set the text
-        constexpr auto TEXT_LENGTH = 40;
+        // Ensure the text doesnt exceed 40 chars
+        constexpr auto MAX_TEXT_LENGTH = 40;
 
         // Set text length
         int final_size = text_.size();
-        if (final_size > TEXT_LENGTH){
-            final_size = TEXT_LENGTH;
+        if (final_size > MAX_TEXT_LENGTH){
+            final_size = MAX_TEXT_LENGTH;
         }
+
         shader_->SetUniform1i("text_len", final_size);
 
         // Set the text data
-        GLint data[TEXT_LENGTH];
+        GLint data[MAX_TEXT_LENGTH]{};
         for (int i = 0; i < final_size; i++){
             data[i] = text_[i];
         }

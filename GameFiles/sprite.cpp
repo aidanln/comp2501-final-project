@@ -14,7 +14,7 @@ namespace game {
 
 
     /*** Create a standard piece of geometry ***/
-    void Sprite::CreateGeometry (void) {
+    void Sprite::CreateGeometry(void) {
 
         // The face of the square is defined by four vertices and two triangles
 
@@ -85,13 +85,12 @@ namespace game {
 
 
     /*** Bind a shader to a piece of geometry ***/
-    void Sprite::SetGeometry(GLuint shader_program)
-    {
+    void Sprite::SetGeometry(GLuint shader_program) {
 
         // No blending
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
-        glDisable(GL_BLEND);
+        glEnable(GL_BLEND);
 
         // Bind buffers
         glBindBuffer(GL_ARRAY_BUFFER, vbo_);

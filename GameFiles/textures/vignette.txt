@@ -1,0 +1,5 @@
+Source:
+Paint.NET BoltBait extension pack tool "Vignette+", modified to fit the context of the game
+
+License:
+N/A, created by me

@@ -7,7 +7,9 @@
 
 #include <string>
 #include <glm/gtc/matrix_transform.hpp>
+
 #include "game_object.h"
+#include "defs.h"
 
 namespace game {
 
@@ -23,11 +25,9 @@ namespace game {
 
             // Render function for the text
             void Render(const glm::mat4& view_matrix, double current_time) override;
-            void SetTextScale(float x, float y) { scale_x = x; scale_y = y; }
 
         private:
             std::string text_;
-            float scale_x, scale_y;
 
     };
 

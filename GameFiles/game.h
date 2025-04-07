@@ -27,6 +27,7 @@
 #include "projectile_game_object.h"
 #include "weapons.h"
 #include "text_game_object.h"
+#include "hud.h"
 
 #include "defs.h"
 
@@ -140,14 +141,14 @@ namespace game {
 
         // Game Object Storage, now seperated to optimize the Update() function
         PlayerGameObject* player;
+        GameObject* vignette;
+        GameObject* background;
+        HUD* hud;
         std::vector<EnemyGameObject*> enemy_arr;
         std::vector<EnemySpawn*> enemy_spawn_arr;
         std::vector<ProjectileGameObject*> projectile_arr;
         std::vector<ProjectileGameObject*> gunner_projectile_arr;
         std::vector<CollectibleGameObject*> collectible_arr;
-        std::vector<TextGameObject*> text_arr;
-        GameObject* background;
-        TextGameObject* score;
 
         // Weapon Object Storage, entity object for PlayerGameObject
         Weapon* pistol;
@@ -177,6 +178,7 @@ namespace game {
         // Trackers
         glm::vec3 cursor_pos;
         int spawn_index;
+        int enemies_alive;
 
         // Random Number Generation Helper
         std::random_device rd;

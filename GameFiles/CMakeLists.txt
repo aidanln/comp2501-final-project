@@ -7,6 +7,7 @@ project(${PROJ_NAME})
 # Specify project files: header files and source files
 set(HDRS
     audio_manager.h
+    buyable_item.h
     collectible_game_object.h
     defs.h
     derived_enemy_objects.h
@@ -15,6 +16,7 @@ set(HDRS
     file_utils.h
     game.h
     game_object.h
+    hud.h
     player_game_object.h
     projectile_game_object.h
     shader.h
@@ -27,6 +29,7 @@ set(HDRS
  
 set(SRCS
     audio_manager.cpp
+    buyable_item.cpp
     collectible_game_object.cpp
     derived_enemy_objects.cpp
     enemy_game_object.cpp
@@ -34,6 +37,7 @@ set(SRCS
     file_utils.cpp
     game.cpp
     game_object.cpp
+    hud.cpp
     main.cpp
     player_game_object.cpp
     projectile_game_object.cpp

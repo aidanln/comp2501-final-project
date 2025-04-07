@@ -1,7 +1,7 @@
+// Contains Univeral Constants for the Game
+
 #ifndef DEFS_H_
 #define DEFS_H_
-
-#include <glm/gtc/constants.hpp>
 
 
 		/*** External Constants ***/
@@ -138,10 +138,18 @@ namespace game {
 	const float SNIPER_SPEED = 35.0f;
 	const bool SNIPER_SEMI = true;
 
-	// Text Aspect Ratio and Offset
-	const float TEXT_SIZE_X = 2.5;
-	const float TEXT_SIZE_Y = 0.8;
-	const glm::vec3 SCORE_TEXT_OFFSET = glm::vec3(-4.45, 3.4, 0);
+
+
+		/*** HUD and Text Constants ***/
+
+	const float CORNER_TEXT_SIZE_X = 2.5f;
+	const float CORNER_TEXT_SIZE_Y = 0.4f;
+	const float INFO_TEXT_SIZE_X = 4.2f;
+	const float INFO_TEXT_SIZE_Y = 0.35f;
+	const float ICON_SIZE = 0.5f;
+	const unsigned int SMALL_HUD_LEN = 16;
+	const unsigned int LONG_HUD_LEN = 40;
+
 }
 
 #endif
