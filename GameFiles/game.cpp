@@ -128,6 +128,7 @@ namespace game {
         camera_target_pos = glm::vec3(0.0f);
         cursor_pos = glm::vec3(0.0f);
         spawn_index = 0;
+        interact_id = 0;
 
         // Audio Setup
         InitAudio();
@@ -192,6 +193,11 @@ namespace game {
             enemy_shoot_sfx = am.AddSound(filename.c_str());
             am.SetSoundPosition(enemy_shoot_sfx, 0.0, 0.0, 0.0);
 
+            // Setup the wave complete sound
+            filename = std::string(resources_directory_g).append("/audio/wave_complete.wav");
+            wave_complete_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(wave_complete_sfx, 0.0, 0.0, 0.0);
+
             // Set the master volume to a low value to avoid jumpscaring the listener
             am.SetMasterGain(MASTER_VOLUME);
         }
@@ -232,7 +238,11 @@ namespace game {
             tex_smg_bullet = 20,
             tex_rifle_bullet = 21,
             tex_sniper_bullet = 22,
-            tex_gunner_bullet = 23
+            tex_gunner_bullet = 23,
+            tex_border = 24,
+            tex_smg = 25,
+            tex_rifle = 26,
+            tex_sniper = 27
         };
         textures.push_back("/textures/player_ship.png");    // 0,  tex_player
         textures.push_back("/textures/gunner_ship.png");    // 1,  tex_gunner
@@ -258,6 +268,10 @@ namespace game {
         textures.push_back("/textures/rifle_bullet.png");   // 21, tex_rifle_bullet
         textures.push_back("/textures/sniper_bullet.png");  // 22, tex_sniper_bullet
         textures.push_back("/textures/gunner_bullet.png");  // 23, tex_gunner_bullet
+        textures.push_back("/textures/buyable_border.png"); // 24, tex_border
+        textures.push_back("/textures/buyable_smg.png");    // 25, tex_smg
+        textures.push_back("/textures/buyable_rifle.png");  // 26, tex_rifle
+        textures.push_back("/textures/buyable_sniper.png"); // 27, tex_sniper
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
@@ -282,9 +296,11 @@ namespace game {
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(9.0f, -16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
 
         // DEBUG, start with all the power-ups spawned in for testing purposes
+        /*
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(-4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_double_points], 0));
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_bullet_boost], 1));
         collectible_arr.push_back(new CollectibleGameObject(glm::vec3(4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_cold_shock], 2));
+        */
 
         // Setup the HUD
         hud = new HUD(sprite_, &text_shader_, &sprite_shader_, tex_[tex_font], tex_[tex_dp_icon], tex_[tex_bb_icon], tex_[tex_cs_icon]);
@@ -297,6 +313,29 @@ namespace game {
         background = new GameObject(glm::vec3(0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(WORLD_SIZE));
 
+        /* Setup Buyable Areas */
+
+        // SMG
+        BuyableItem* smg_buy = new BuyableItem(glm::vec3(0.0f, 9.0f, 0.0f),
+            sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_smg]);
+        buyable_arr.push_back(smg_buy);
+        smg_buy->SetPointCost(2000);
+        smg_buy->SetNameAndCost("Press 'F' to buy SMG [2000 Points]");
+
+        // Rifle
+        BuyableItem* rifle_buy = new BuyableItem(glm::vec3(-14.0f, 14.0f, 0.0f),
+            sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_rifle]);
+        buyable_arr.push_back(rifle_buy);
+        rifle_buy->SetPointCost(4500);
+        rifle_buy->SetNameAndCost("Press 'F' to buy Rifle [4500 Points]");
+
+        // Sniper
+        BuyableItem* sniper_buy = new BuyableItem(glm::vec3(14.0f, 14.0f, 0.0f),
+            sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_sniper]);
+        buyable_arr.push_back(sniper_buy);
+        sniper_buy->SetPointCost(6500);
+        sniper_buy->SetNameAndCost("Press 'F' to buy Sniper [6500 Points]");
+
         // Define all the Weapons
         pistol  = new Weapon
         (PISTOL_DMG,    PISTOL_SHOOT_CD,    PISTOL_LIFESPAN,    PISTOL_SPREAD,  PISTOL_SPEED,   PISTOL_SEMI);
@@ -307,7 +346,7 @@ namespace game {
         sniper  = new Weapon
         (SNIPER_DMG,    SNIPER_SHOOT_CD,    SNIPER_LIFESPAN,    SNIPER_SPREAD,  SNIPER_SPEED,   SNIPER_SEMI);
 
-        // set the default weapon (pistol)
+        // Set the default weapon (pistol)
         player->SetWeapon(pistol);
 
         player->GetKnockbackCooldown().Start(1.0);
@@ -346,6 +385,11 @@ namespace game {
         // delete enemy spawns
         for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
             delete enemy_spawn_arr[i];
+        }
+
+        // delete buyables
+        for (int i = 0; i < buyable_arr.size(); ++i) {
+            delete buyable_arr[i];
         }
 
         // delete weapons
@@ -500,11 +544,36 @@ namespace game {
             // Handle the interact key (key: F)
             if (glfwGetKey(window_, GLFW_KEY_F) == 1) {
                 if (!holding_interact) {
-                    /*
-                    * once buyables are implemented, this will check which buyable
-                    * the player is in range of, and apply it to them provided they
-                    * have the necessary points, with points being deducted afterwards.
-                    */
+                    if (interact_id >= 1) {
+                        BuyableItem* buy_area = buyable_arr[interact_id - 1];
+
+                        if (player->GetPoints() >= buy_area->GetPointCost()
+                            && player->GetWeaponID() != interact_id) {
+
+                            player->SpendPoints(buy_area->GetPointCost());
+
+                            switch (interact_id) {
+
+                            case 1:
+                                // handle buying the SMG
+                                player->SetWeapon(smg);
+                                player->SetWeaponID(1);
+                                break;
+
+                            case 2:
+                                // handle buying the rifle
+                                player->SetWeapon(rifle);
+                                player->SetWeaponID(2);
+                                break;
+
+                            case 3:
+                                // handle buying the sniper
+                                player->SetWeapon(sniper);
+                                player->SetWeaponID(3);
+                                break;
+                            }
+                        }
+                    }
                     holding_interact = true;
                 }
             }
@@ -562,15 +631,18 @@ namespace game {
     /*** Update all the game objects, can change order by re-arranging functions ***/
     void Game::Update(double delta_time) {
 
+        // visuals (camera and lighting)
+        UpdateCamera(delta_time);
+        vignette->SetPosition(player->GetPosition());
+
         // player
         UpdatePlayer(delta_time);
 
-        // visuals
-        UpdateCamera(delta_time);
-        vignette->SetPosition(player->GetPosition());
+        // fixed areas
         for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
             enemy_spawn_arr[i]->Update(delta_time);
         }
+        UpdateBuyables(delta_time);
 
         // enemies
         UpdateEnemies(delta_time);
@@ -648,6 +720,34 @@ namespace game {
     }
 
 
+    /*** Update the buyables and check if the player is in range to interact with them ***/
+    void Game::UpdateBuyables(double delta_time) {
+        
+        // set defaults while checking if the player is in a buyable area
+        hud->UpdateInfo("");
+        bool player_in_radius = false;
+
+        // iterate thru all of the buyables
+        for (int i = 0; i < buyable_arr.size(); ++i) {
+            BuyableItem* buy_area = buyable_arr[i];
+
+            buy_area->Update(delta_time);
+
+            // check if the player is in the buy radius
+            if (CollisionCheck(buy_area, player) && !player_in_radius) {
+                hud->UpdateInfo(buy_area->GetNameAndCost());
+                interact_id = i+1;
+                player_in_radius = true;
+            }
+        }
+
+        // reset back to 0 if the player is not in a radius
+        if (!player_in_radius) {
+            interact_id = 0;
+        }
+    }
+
+
     /*** Update all the enemy game objects, ensures intended behavior every frame ***/
     void Game::UpdateEnemies(double delta_time) {
         for (int i = 0; i < enemy_arr.size(); ++i) {
@@ -677,9 +777,15 @@ namespace game {
 
                     // misc updates to be called if the player is alive
                     if (update_flag) {
+
+                        // check for gunner, only shoot if player is in range
                         if (GunnerEnemy* gunner = dynamic_cast<GunnerEnemy*>(enemy)) {
-                            if (gunner->IsShootCDFinished()) {
-                                SpawnGunnerBullet(gunner);
+                            if (glm::distance(gunner->GetPosition(), player->GetPosition())
+                                < GUNNER_SHOOT_DIST) {
+
+                                if (gunner->IsShootCDFinished()) {
+                                    SpawnGunnerBullet(gunner);
+                                }
                             }
                         }
                         enemy->UpdateTarget(player);
@@ -800,9 +906,6 @@ namespace game {
 
         // info segments, will hold buyable information, placeholders for now
         hud->SetMiddleBottom(glm::vec3(camera_pos.x, camera_pos.y - 1.5f, 0.0f));
-        hud->UpdateTopInfo("example top info");
-        hud->UpdateBottomInfo("example bottom info");
-
     }
 
     /**********************************/
@@ -962,6 +1065,8 @@ namespace game {
         if (waves.EnemiesAlive() <= 0) {
             if (waves.IncrementWave()) {
                 std::cout << "Wave complete." << std::endl;
+                am.PlaySound(wave_complete_sfx);
+                enemy_spawn_timer.Start(2.0f);
             }
             else {
                 int points = player->GetPoints();
@@ -1208,12 +1313,17 @@ namespace game {
         // Transparent sprite helper
         glDepthMask(GL_FALSE);
         
-        // Render all game objects (order: back to front)
+        /* Render ALL the GameObjects in storage (order: back to front) */
         
         background->Render(view_matrix, current_time_);
 
         for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
             enemy_spawn_arr[i]->Render(view_matrix, current_time_);
+        }
+
+        for (int i = 0; i < buyable_arr.size(); ++i) {
+            buyable_arr[i]->Render(view_matrix, current_time_);
+            buyable_arr[i]->GetIcon()->Render(view_matrix, current_time_);
         }
 
         for (int i = 0; i < gunner_projectile_arr.size(); ++i) {
@@ -1258,7 +1368,6 @@ namespace game {
 
         // Set OpenGL viewport based on framebuffer width and height
         glViewport(0, 0, width, height);
-        glScissor(0, 0, width, height);
 
         // Update Game instance's window dimensions
         Game* game = static_cast<Game*>(glfwGetWindowUserPointer(window));

@@ -66,14 +66,10 @@ namespace game {
 
         /* BELOW THE HUD ELEMENTS */
 
-        // ta:index 6 -> info segment 1         (top)
+        // ta:index 6 -> info segment
         TextGameObject* info1 = new TextGameObject(init_pos, geom, text_shader, font);
         info1->SetScale(glm::vec2(INFO_TEXT_SIZE_X, INFO_TEXT_SIZE_Y));
         text_areas.push_back(info1);
-        // ta:index 7 -> info segment 2         (bot)
-        TextGameObject* info2 = new TextGameObject(init_pos, geom, text_shader, font);
-        info2->SetScale(glm::vec2(INFO_TEXT_SIZE_X, INFO_TEXT_SIZE_Y));
-        text_areas.push_back(info2);
         
     }
 
@@ -142,7 +138,7 @@ namespace game {
         }
         else {
             int padding = len - input.length();
-            int left_padding = padding / 2;
+            int left_padding = floor(padding / 2);
             int right_padding = padding - left_padding;
 
             result.append(left_padding, ' ');
@@ -200,7 +196,6 @@ namespace game {
     }
     void HUD::SetMiddleBottom(const glm::vec3& pos) {
         text_areas[6]->SetPosition(pos);
-        text_areas[7]->SetPosition(pos - text_offset);
     }
 
 
@@ -243,15 +238,9 @@ namespace game {
             LeftAlignString(("Time: " + formattedTime), SMALL_HUD_LEN)
         );
     }
-    void HUD::UpdateTopInfo(const std::string& info) {
+    void HUD::UpdateInfo(const std::string& info) {
         text_areas[6]->SetText(
             CenterAlignString(info, LONG_HUD_LEN)
         );
     }
-    void HUD::UpdateBottomInfo(const std::string& info) {
-        text_areas[7]->SetText(
-            CenterAlignString(info, LONG_HUD_LEN)
-        );
-    }
-
 }

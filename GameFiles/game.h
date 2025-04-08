@@ -31,6 +31,7 @@
 #include "particles.h"
 #include "particle_system.h"
 #include "waves.h"
+#include "buyable_item.h"
 
 #include "defs.h"
 
@@ -78,6 +79,7 @@ namespace game {
         // Sub-Update functions, updates all specific components of the game
         void UpdateCamera(double delta_time);
         void UpdatePlayer(double delta_time);
+        void UpdateBuyables(double delta_time);
         void UpdateEnemies(double delta_time);
         void UpdatePlayerProjectiles(double delta_time);
         void UpdateGunnerProjectiles(double delta_time);
@@ -165,6 +167,7 @@ namespace game {
         std::vector<ProjectileGameObject*> gunner_projectile_arr;
         std::vector<CollectibleGameObject*> collectible_arr;
         std::vector<ParticleSystem*> particle_arr;
+        std::vector<BuyableItem*> buyable_arr;
 
         // Wave control object
         WaveControl waves;
@@ -185,7 +188,7 @@ namespace game {
         // Audio Variables, should be callable 
         audio_manager::AudioManager am;
         int bg_music, game_start_sfx, boom_sfx, game_over_sfx, collect_sfx, power_up_ambience,
-            player_hit_sfx, player_shoot_sfx, enemy_hit_sfx, enemy_shoot_sfx;
+            player_hit_sfx, player_shoot_sfx, enemy_hit_sfx, enemy_shoot_sfx, wave_complete_sfx;
 
         // Camera Attributes, needed for smooth movement
         glm::vec3 camera_pos;
@@ -199,6 +202,7 @@ namespace game {
         // Trackers
         glm::vec3 cursor_pos;
         int spawn_index;
+        int interact_id;
 
         // Random Number Generation Helper
         std::random_device rd;

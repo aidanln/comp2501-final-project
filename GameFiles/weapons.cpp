@@ -11,6 +11,4 @@ namespace game {
 		: damage(damage), firing_cooldown(firing_cooldown), bullet_lifespan(bullet_lifespan),
 		  bullet_spread(bullet_spread), bullet_speed(bullet_speed), semi_auto(semi_auto) {}
 
-
-
 } // namespace game
