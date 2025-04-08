@@ -225,7 +225,14 @@ namespace game {
             tex_dp_icon = 13,
             tex_bb_icon = 14,
             tex_cs_icon = 15,
-            tex_orb = 16
+            tex_orb = 16,
+            tex_sawblade = 17,
+            tex_base = 18,
+            tex_link = 19,
+            tex_smg_bullet = 20,
+            tex_rifle_bullet = 21,
+            tex_sniper_bullet = 22,
+            tex_gunner_bullet = 23
         };
         textures.push_back("/textures/player_ship.png");    // 0,  tex_player
         textures.push_back("/textures/gunner_ship.png");    // 1,  tex_gunner
@@ -244,6 +251,13 @@ namespace game {
         textures.push_back("/textures/bb_icon.png");        // 14, tex_bb_icon
         textures.push_back("/textures/cs_icon.png");        // 15, tex_cs_icon
         textures.push_back("/textures/orb.png");            // 16, tex_orb
+        textures.push_back("/textures/sawblade.png");       // 17, tex_sawblade
+        textures.push_back("/textures/base.png");           // 18, tex_base
+        textures.push_back("/textures/link.png");           // 19, tex_link
+        textures.push_back("/textures/smg_bullet.png");     // 20, tex_smg_bullet
+        textures.push_back("/textures/rifle_bullet.png");   // 21, tex_rifle_bullet
+        textures.push_back("/textures/sniper_bullet.png");  // 22, tex_sniper_bullet
+        textures.push_back("/textures/gunner_bullet.png");  // 23, tex_gunner_bullet
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
@@ -800,12 +814,10 @@ namespace game {
     void Game::EnemyCollisionCheck(EnemyGameObject* enemy) {
         if (ChaserEnemy* chaser = dynamic_cast<ChaserEnemy*>(enemy)) {
             if (CollisionCheck(player, chaser->GetChild1()) || CollisionCheck(player, chaser->GetChild2()) || CollisionCheck(player, chaser->GetChild3())) {
-                if (!player->GetKnockbackCooldown().IsRunning()) {
-                    glm::vec3 direction = glm::normalize(player->GetPosition() - chaser->GetPosition());
-                    player->ApplyKnockback(direction * 10.0f);
-                    // std::cout << "collided with arm segment" << std::endl;
-                    player->GetKnockbackCooldown().Start(1.0f);
-                }
+                glm::vec3 direction = glm::normalize(player->GetPosition() - chaser->GetPosition());
+                player->ApplyKnockback(direction * 10.0f, chaser->GetDamage());
+                // std::cout << "collided with arm segment" << std::endl;
+                player->GetKnockbackCooldown().Start(1.0f);
             }
         }
         if (CollisionCheck(player, enemy)) {
@@ -952,7 +964,28 @@ namespace game {
                 std::cout << "Wave complete." << std::endl;
             }
             else {
+                int points = player->GetPoints();
+                std::string rank = "";
+                if (points < 30000) {
+                    rank = "D";
+                }
+                if (points >= 30000 && points < 35000) {
+                    rank = "C";
+                }
+                if (points >= 35000 && points < 40000) {
+                    rank = "B";
+                }
+                if (points >= 40000 && points < 45000) {
+                    rank = "A";
+                }
+                if (points >= 45000 && points < 50000) {
+                    rank = "A+";
+                }
+                if (points >= 50000) {
+                    rank = "S";
+                }
                 std::cout << "There are no more waves dawg. You Win!" << std::endl;
+                std::cout << "Your rank is: " << rank << "." << std::endl;
             }
             return;
         }
@@ -982,7 +1015,7 @@ namespace game {
 
             case 2:
                 // Spawn a Chaser, decrement the corresponding enemy counter
-                enemy_arr.push_back(new ChaserEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[2]));
+                enemy_arr.push_back(new ChaserEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[2], tex_[18], tex_[19], tex_[17]));
                 waves.DecrementEnemyCount(chaser);
                 break;
 

@@ -48,7 +48,7 @@ namespace game {
 
         // Knockback stuff
         inline Timer GetKnockbackCooldown(void) const { return knockback_cooldown; }
-        void ApplyKnockback(glm::vec3& direction);
+        void ApplyKnockback(glm::vec3& direction, int damage);
 
     private:
         // Health trackers

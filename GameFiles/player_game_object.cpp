@@ -30,6 +30,10 @@ namespace game {
 	/*** Player-Specific Update function ***/
 	void PlayerGameObject::Update(double delta_time) {
 		float dt = static_cast<float>(delta_time);
+		// if done with knockback, set it back to normal speed
+		if (knockback_cooldown.FinishedAndStop()) {
+			max_speed = INIT_PLAYER_MAX_SPEED;
+		}
 
 		// Update velocity based on acceleration
 		velocity_ += acceleration_ * dt;
@@ -103,6 +107,10 @@ namespace game {
 			}
 
 			// indicate damage was taken
+			SpendPoints(recieved_dmg * 5);
+			if (points < 0) {
+				points = 0;
+			}
 			return true;
 		}
 
@@ -154,15 +162,11 @@ namespace game {
 	}
 
 	/*** Handle knockback effect ***/
-	void PlayerGameObject::ApplyKnockback(glm::vec3& direction) {
+	void PlayerGameObject::ApplyKnockback(glm::vec3& direction, int damage) {
+		TakeDamage(damage/4);
 		SetVelocity(direction);
 		// std::cout << velocity_.x << ", " << velocity_.y << std::endl;
 		max_speed = 12.0f;
-		Timer t;
-		t.Start(0.01);
-		if (t.Finished()) {
-			max_speed = INIT_PLAYER_MAX_SPEED;
-		}
+		knockback_cooldown.Start(0.2);
 	}
-
 }

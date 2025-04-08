@@ -45,11 +45,20 @@ namespace game {
 
         void UpdateFromParent(const glm::vec3& parent_pos, float parent_angle, float lerp_factor);
         inline float GetLocalAngle() const { return local_angle; }
+        void UpdateSawbladeRotation(double delta_time);
+        inline float GetSawbladeRotationSpeed() const { return sawblade_rotation_speed_; }
+        inline void SetSawbladeRotationSpeed(float speed) { sawblade_rotation_speed_ = speed; }
+        float GetSawbladeRotation() const { return sawblade_rotation_; }
+        void SetIsSawblade(bool is_saw);
+        void ArmObject::Render(const glm::mat4& view_matrix, double current_time) override;
 
     private:
         // dist from parent
         glm::vec3 offset_from_parent;
-        float local_angle = 0.0f;
+        float local_angle;
+        float sawblade_rotation_speed_;
+        float sawblade_rotation_;
+        bool is_sawblade;
     };
 
 
@@ -60,7 +69,7 @@ namespace game {
 
     public:
         // Constructor, has unique default initializations
-        ChaserEnemy(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture);
+        ChaserEnemy(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture, const GLuint& base_texture, const GLuint& link_texture, const GLuint& saw_texture);
         ~ChaserEnemy();
 
         // Chaser-specific movement
