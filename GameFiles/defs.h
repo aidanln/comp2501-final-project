@@ -51,7 +51,7 @@ namespace game {
 	// Player general values
 	const unsigned short int PLAYER_INIT_HP = 100;
 	const float PLAYER_ACCEL_FORCE = 20.0f;
-	const float PLAYER_MAX_SPEED = 4.2f;
+	const float INIT_PLAYER_MAX_SPEED = 4.2f;
 	const unsigned short int SHOT_HIT_POINT_REWARD = 10;
 
 	// Player healing helpers

@@ -104,9 +104,10 @@ namespace game {
 		health = CHASER_INIT_HP;
 		damage = CHASER_INIT_DMG;
 		point_reward = CHASER_POINT_REWARD;
-		child1 = new ArmObject(glm::vec3(0.6f, 0.0f, 0.0f), geom, shader, texture);
-		child2 = new ArmObject(glm::vec3(0.3f, 0.0f, 0.0f), geom, shader, texture);
-		child2->SetScale(glm::vec2(1.8f, 0.4f));
+		child1 = new ArmObject(glm::vec3(0.55f, 0.0f, 0.0f), geom, shader, texture);
+		child2 = new ArmObject(glm::vec3(0.25f, 0.0f, 0.0f), geom, shader, texture);
+		child3 = new ArmObject(glm::vec3(0.3f, 0.0f, 0.0f), geom, shader, texture);
+		// child3->SetScale(glm::vec2(1.8f, 0.4f));
 	}
 
 
@@ -114,6 +115,7 @@ namespace game {
 	ChaserEnemy::~ChaserEnemy() {
 		delete child1;
 		delete child2;
+		delete child3;
 	}
 	
 
@@ -127,10 +129,21 @@ namespace game {
 		float angle = atan2(velocity_.y, velocity_.x);
 
 		// child1 transforms based on body
-		child1->UpdateFromParent(position_, angle, 0.05);
+		child1->UpdateFromParent(position_, angle, 0.03);
 
 		// child2 transforms based on child1
 		child2->UpdateFromParent(child1->GetPosition(), child1->GetLocalAngle(), 0.02);
+
+		// child3 transforms based on child2
+		child3->UpdateFromParent(child2->GetPosition(), child2->GetLocalAngle(), 0.01);
+
+		//child1->Update(delta_time);
+		//child2->Update(delta_time);
+		//child3->Update(delta_time);
+
+
+
+		// std::cout << child1->GetPosition().x << ", " << child1->GetPosition().y << std::endl;
 	}
 
 
@@ -139,6 +152,7 @@ namespace game {
 		EnemyGameObject::Render(view_matrix, current_time);
 		child1->Render(view_matrix, current_time);
 		child2->Render(view_matrix, current_time);
+		child3->Render(view_matrix, current_time);
 	}
 
 

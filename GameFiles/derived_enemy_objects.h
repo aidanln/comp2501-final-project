@@ -70,13 +70,15 @@ namespace game {
 
         ArmObject* GetChild1() const { return child1; }
         ArmObject* GetChild2() const { return child2; }
+        ArmObject* GetChild3() const { return child3; }
+        int GetChildCount() const { return child_count; }
 
     private:
         // children
         ArmObject* child1;
         ArmObject* child2;
-        // arm bend
-        float arm_bend_angle = 0.0f;
+        ArmObject* child3;
+        int child_count;
     };
 
 

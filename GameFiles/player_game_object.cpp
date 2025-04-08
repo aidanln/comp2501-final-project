@@ -18,6 +18,7 @@ namespace game {
 		double_points = false;
 		bullet_boost = false;
 		cold_shock = false;
+		max_speed = INIT_PLAYER_MAX_SPEED;
 		
 		// initialize health timers
 		i_frames_timer.Start(0.0);
@@ -34,13 +35,13 @@ namespace game {
 		velocity_ += acceleration_ * dt;
 
 		// Ensure velocity doesn't exceed max speed
-		if (glm::length(velocity_) > PLAYER_MAX_SPEED) {
-			velocity_ = glm::normalize(velocity_) * PLAYER_MAX_SPEED;
+		if (glm::length(velocity_) > max_speed) {
+			velocity_ = glm::normalize(velocity_) * max_speed;
 		}
 
 		// Update position based on velocity, then decelerate
 		position_ += velocity_ * dt;
-		velocity_ /= 1.01 + (dt * 3); // weird
+		velocity_ /= 1.001 + (dt * 3); // weird
 
 		// Clamp player position to ensure no OOB movement is possible
 		position_.x = glm::clamp(position_.x, -PLAYER_X_BOUND, PLAYER_X_BOUND);
@@ -150,6 +151,18 @@ namespace game {
 	void PlayerGameObject::EnableColdShock(void) {
 		cold_shock = true;
 		cs_timer.Start(POWER_UP_DURATION);
+	}
+
+	/*** Handle knockback effect ***/
+	void PlayerGameObject::ApplyKnockback(glm::vec3& direction) {
+		SetVelocity(direction);
+		// std::cout << velocity_.x << ", " << velocity_.y << std::endl;
+		max_speed = 12.0f;
+		Timer t;
+		t.Start(0.01);
+		if (t.Finished()) {
+			max_speed = INIT_PLAYER_MAX_SPEED;
+		}
 	}
 
 }

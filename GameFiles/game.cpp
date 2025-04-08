@@ -10,8 +10,8 @@ const std::string resources_directory_g = RESOURCES_DIRECTORY;
 
 // Constants for the OpenGL window and viewport
 const char* window_title_g = "Celestial Onslaught";
-const unsigned int window_width_g = 1200;
-const unsigned int window_height_g = 800;
+const unsigned int window_width_g = 900;
+const unsigned int window_height_g = 600;
 const glm::vec3 viewport_background_color_g(0.1, 0.1, 0.1);
 
 namespace game {
@@ -295,6 +295,8 @@ namespace game {
 
         // set the default weapon (pistol)
         player->SetWeapon(pistol);
+
+        player->GetKnockbackCooldown().Start(1.0);
     }
 
 
@@ -796,6 +798,16 @@ namespace game {
 
     /*** Check for collisions with the param enemy ***/
     void Game::EnemyCollisionCheck(EnemyGameObject* enemy) {
+        if (ChaserEnemy* chaser = dynamic_cast<ChaserEnemy*>(enemy)) {
+            if (CollisionCheck(player, chaser->GetChild1()) || CollisionCheck(player, chaser->GetChild2()) || CollisionCheck(player, chaser->GetChild3())) {
+                if (!player->GetKnockbackCooldown().IsRunning()) {
+                    glm::vec3 direction = glm::normalize(player->GetPosition() - chaser->GetPosition());
+                    player->ApplyKnockback(direction * 10.0f);
+                    // std::cout << "collided with arm segment" << std::endl;
+                    player->GetKnockbackCooldown().Start(1.0f);
+                }
+            }
+        }
         if (CollisionCheck(player, enemy)) {
             enemy->TakeDamage(enemy->GetHealth());
             player->TakeDamage(enemy->GetDamage());
@@ -811,6 +823,7 @@ namespace game {
         if (ChaserEnemy* chaser = dynamic_cast<ChaserEnemy*>(enemy)) {
             chaser->GetChild1()->SetScale(glm::vec2(0.0f));
             chaser->GetChild2()->SetScale(glm::vec2(0.0f));
+            chaser->GetChild3()->SetScale(glm::vec2(0.0f));
         }
         enemy->Explode();
         enemy->SetTexture(tex_[5]); // explosion texture
