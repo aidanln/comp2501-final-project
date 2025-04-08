@@ -1,6 +1,7 @@
 // Definitions for every derived enemy object
 
 #include "derived_enemy_objects.h"
+#include <vector>
 
 namespace game {
 
@@ -69,7 +70,11 @@ namespace game {
 	/*** Constructor, default values, ititalize off-screen ***/
 	ArmObject::ArmObject(const glm::vec3& offset, Geometry* geom, Shader* shader, const GLuint& texture)
 		: EnemyGameObject(glm::vec3(100.0f, 100.0f, 1.0f), geom, shader, texture), offset_from_parent(offset) {
-		scale_ = glm::vec2(0.3f);  // small arm
+		scale_ = glm::vec2(0.3f);
+		local_angle = 0.0f;
+		sawblade_rotation_speed_ = 0.0f;
+		sawblade_rotation_ = 0.0f;
+		is_sawblade = false;
 	}
 
 
@@ -91,6 +96,44 @@ namespace game {
 		SetRotation(local_angle - HALF_PI);
 	}
 
+	void ArmObject::UpdateSawbladeRotation(double delta_time) {
+		if (is_sawblade) {
+			sawblade_rotation_ += sawblade_rotation_speed_ * static_cast<float>(delta_time);
+			// Keep the angle within 0 to 2*PI to prevent potential floating-point issues
+			if (sawblade_rotation_ > 2 * glm::pi<float>()) {
+				sawblade_rotation_ -= 2 * glm::pi<float>();
+			}
+		}
+	}
+
+	/*** Set whether this arm is a sawblade ***/
+	void ArmObject::SetIsSawblade(bool is_saw) {
+		is_sawblade = is_saw;
+		if (is_sawblade) {
+			sawblade_rotation_speed_ = 2.5f; // Faster rotation for sawblade
+		}
+	}
+
+	/*** Override render to allow rotation ***/
+	void ArmObject::Render(const glm::mat4& view_matrix, double current_time) {
+		if (is_sawblade) {
+			// Save current rotation
+			float original_rotation = GetRotation();
+
+			// Add sawblade rotation
+			SetRotation(sawblade_rotation_);
+
+			// Render with combined rotation
+			GameObject::Render(view_matrix, current_time);
+
+			// Restore original rotation
+			SetRotation(original_rotation);
+		}
+		else {
+			GameObject::Render(view_matrix, current_time);
+		}
+	}
+
 
 
 	/***************************/
@@ -98,15 +141,18 @@ namespace game {
 	/***************************/
 
 	/*** Constructor, initializes Chaser-specific defaults ***/
-	ChaserEnemy::ChaserEnemy(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture)
+	ChaserEnemy::ChaserEnemy(const glm::vec3& position, Geometry* geom, Shader* shader, const GLuint& texture, const GLuint& base_texture, const GLuint& link_texture, const GLuint& saw_texture)
 		: EnemyGameObject(position, geom, shader, texture) {
 		scale_ = glm::vec2(0.9f);
 		health = CHASER_INIT_HP;
 		damage = CHASER_INIT_DMG;
 		point_reward = CHASER_POINT_REWARD;
-		child1 = new ArmObject(glm::vec3(0.6f, 0.0f, 0.0f), geom, shader, texture);
-		child2 = new ArmObject(glm::vec3(0.3f, 0.0f, 0.0f), geom, shader, texture);
-		child2->SetScale(glm::vec2(1.8f, 0.4f));
+		child1 = new ArmObject(glm::vec3(0.55f, 0.0f, 0.0f), geom, shader, base_texture);
+		child2 = new ArmObject(glm::vec3(0.2f, 0.0f, 0.0f), geom, shader, link_texture);
+		child3 = new ArmObject(glm::vec3(0.4f, 0.0f, 0.0f), geom, shader, saw_texture);
+		child1->SetScale(glm::vec2(0.6f));
+		child2->SetScale(glm::vec2(0.7f, 0.55f));
+		child3->SetScale(glm::vec2(0.7f));
 	}
 
 
@@ -114,6 +160,7 @@ namespace game {
 	ChaserEnemy::~ChaserEnemy() {
 		delete child1;
 		delete child2;
+		delete child3;
 	}
 	
 
@@ -127,10 +174,18 @@ namespace game {
 		float angle = atan2(velocity_.y, velocity_.x);
 
 		// child1 transforms based on body
-		child1->UpdateFromParent(position_, angle, 0.05);
+		child1->UpdateFromParent(position_, angle, 0.03);
 
 		// child2 transforms based on child1
-		child2->UpdateFromParent(child1->GetPosition(), child1->GetLocalAngle(), 0.02);
+		child2->UpdateFromParent(child1->GetPosition(), child1->GetLocalAngle(), 0.01);
+
+		// child3 transforms based on child2
+		child3->UpdateFromParent(child2->GetPosition(), child2->GetLocalAngle(), 0.01);
+
+		child3->SetIsSawblade(true);
+		child3->UpdateSawbladeRotation(delta_time);
+
+		// std::cout << child1->GetPosition().x << ", " << child1->GetPosition().y << std::endl;
 	}
 
 
@@ -139,6 +194,7 @@ namespace game {
 		EnemyGameObject::Render(view_matrix, current_time);
 		child1->Render(view_matrix, current_time);
 		child2->Render(view_matrix, current_time);
+		child3->Render(view_matrix, current_time);
 	}
 
 
