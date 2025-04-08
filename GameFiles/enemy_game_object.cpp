@@ -43,8 +43,6 @@ namespace game {
 		else if (health < 0) {
 			health = 0;
 		}
-		// debug, keep until HUD is added
-		std::cout << "(DMG) hit an enemy for " << recieved_dmg << " damage." << std::endl;
 	}
 
 } // namespace game

@@ -8,11 +8,13 @@ namespace game {
     HUD::HUD(Geometry* geom, Shader* text_shader, Shader* sprite_shader, GLuint font, GLuint ico1, GLuint ico2, GLuint ico3) {
 
         // initialize member vars
-        text_offset = glm::vec3(0.0f, 0.45f, 0.0f);
-        icon_offset = glm::vec3(0.55f, 0.0f, 0.0f);
+        text_offset = glm::vec3(0.0f, 0.5f, 0.0f);
+        icon_offset = glm::vec3(0.6f, 0.0f, 0.0f);
+        icon_adj = glm::vec3(1.1f, 0.0f, 0.0f);
+        hide = true;
 
-        // helper pre-def
-        glm::vec3 init_pos(0.0f);
+        // helper pre-def, initializes everything offscreen
+        glm::vec3 init_pos(-100.0f, -100.0f, 1.0f);
 
         /* BOTTOM LEFT HUD ELEMENTS */ 
 
@@ -90,6 +92,9 @@ namespace game {
     /*** Call the Render function for all the HUD elements ***/
     void HUD::RenderAll(const glm::mat4& view_matrix, double current_time) {
 
+        // Skip if the hide flag is true
+        if (hide) return;
+
         // Render the Text
         for (int i = 0; i < text_areas.size(); ++i) {
             text_areas[i]->Render(view_matrix, current_time);
@@ -108,8 +113,8 @@ namespace game {
     }
 
 
-    /*** Keep all the strings to a fixed length (16 chars) to ensure proper formatting ***/
-    std::string HUD::FixedLengthString(const std::string& input, int len) {
+    /*** Return a fixed length, left-aligned string by adding spaces on the right ***/
+    std::string HUD::LeftAlignString(const std::string& input, int len) {
         std::string result;
 
         // truncate input if it exceeds the max length
@@ -127,6 +132,54 @@ namespace game {
     }
 
 
+    /*** Return a fixed length, center-aligned string by adding spaces on both sides ***/
+    std::string HUD::CenterAlignString(const std::string& input, int len) {
+        std::string result;
+
+        // truncate input if it exceeds the max length
+        if (input.length() >= len) {
+            result = input.substr(0, len);
+        }
+        else {
+            int padding = len - input.length();
+            int left_padding = padding / 2;
+            int right_padding = padding - left_padding;
+
+            result.append(left_padding, ' ');
+            result.append(input);
+            result.append(right_padding, ' ');
+        }
+
+        return result;
+    }
+
+
+    /*** Return a fixed length, right-aligned string by adding spaces on the left ***/
+    std::string HUD::RightAlignString(const std::string& input, int len) {
+        std::string result;
+
+        // truncate input if it exceeds the max length
+        if (input.length() >= len) {
+            result = input.substr(0, len);
+        }
+        else {
+            result.append(len - input.length(), ' ');
+            result.append(input);
+        }
+
+        return result;
+    }
+
+
+    /*** Format the time input to have less precision, looks nicer on the HUD ***/
+    std::string HUD::FormatTime(float time, int precision) {
+        std::ostringstream out;
+        out.precision(precision);
+        out << std::fixed << time;
+        return out.str();
+    }
+
+
     /*** Update the coordinates for HUD elements to be drawn ***/
     void HUD::SetBottomLeftCorner(const glm::vec3& pos) {
         text_areas[0]->SetPosition(pos + (2.0f * text_offset));
@@ -134,9 +187,9 @@ namespace game {
         text_areas[2]->SetPosition(pos);
     }
     void HUD::SetBottomRightCorner(const glm::vec3& pos) {
-        icon_areas[0]->icon->SetPosition(pos + text_offset);
-        icon_areas[1]->icon->SetPosition(pos + text_offset);
-        icon_areas[2]->icon->SetPosition(pos + text_offset);
+        icon_areas[0]->icon->SetPosition(pos + text_offset + icon_adj);
+        icon_areas[1]->icon->SetPosition(pos + text_offset + icon_adj);
+        icon_areas[2]->icon->SetPosition(pos + text_offset + icon_adj);
         text_areas[3]->SetPosition(pos);
     }
     void HUD::SetTopRightCorner(const glm::vec3& pos) {
@@ -145,7 +198,7 @@ namespace game {
     void HUD::SetTopLeftCorner(const glm::vec3& pos) {
         text_areas[5]->SetPosition(pos);
     }
-    void HUD::SetUnderPlayer(const glm::vec3& pos) {
+    void HUD::SetMiddleBottom(const glm::vec3& pos) {
         text_areas[6]->SetPosition(pos);
         text_areas[7]->SetPosition(pos - text_offset);
     }
@@ -154,17 +207,17 @@ namespace game {
     /*** Update the text components of the HUD elements ***/
     void HUD::UpdatePoints(const std::string& points) {
         text_areas[0]->SetText(
-            FixedLengthString(("Points: " + points), SMALL_HUD_LEN)
+            LeftAlignString(("Points: " + points), SMALL_HUD_LEN)
         );
     }
     void HUD::UpdateEnemyCount(const std::string& enemy_count) {
         text_areas[1]->SetText(
-            FixedLengthString(("Enemies: " + enemy_count), SMALL_HUD_LEN)
+            LeftAlignString(("Enemies Left: " + enemy_count), SMALL_HUD_LEN)
         );
     }
     void HUD::UpdateWave(const std::string& wave) {
         text_areas[2]->SetText(
-            FixedLengthString(("Wave: " + wave), SMALL_HUD_LEN)
+            LeftAlignString(("Wave: " + wave), SMALL_HUD_LEN)
         );
     }
     void HUD::UpdatePowerUps(bool dp_tf, bool bb_tf, bool cs_tf) {
@@ -174,28 +227,30 @@ namespace game {
     }
     void HUD::UpdateHealth(const std::string& health) {
         text_areas[3]->SetText(
-            FixedLengthString(("Player HP: " + health), SMALL_HUD_LEN)
+            RightAlignString(("Player HP: " + health), SMALL_HUD_LEN)
         );
     }
     void HUD::UpdateFPS(const std::string& fps) {
         text_areas[4]->SetText(
-            FixedLengthString(("FPS: " + fps), SMALL_HUD_LEN)
+            RightAlignString(("FPS: " + fps), SMALL_HUD_LEN)
         );
 
     }
-    void HUD::UpdateTime(const std::string& time) {
+    void HUD::UpdateTime(const double& time) {
+        float timeValue = static_cast<float>(time);
+        std::string formattedTime = FormatTime(timeValue);
         text_areas[5]->SetText(
-            FixedLengthString(("Time: " + time), SMALL_HUD_LEN)
+            LeftAlignString(("Time: " + formattedTime), SMALL_HUD_LEN)
         );
     }
     void HUD::UpdateTopInfo(const std::string& info) {
         text_areas[6]->SetText(
-            FixedLengthString(info, LONG_HUD_LEN)
+            CenterAlignString(info, LONG_HUD_LEN)
         );
     }
     void HUD::UpdateBottomInfo(const std::string& info) {
         text_areas[7]->SetText(
-            FixedLengthString(info, LONG_HUD_LEN)
+            CenterAlignString(info, LONG_HUD_LEN)
         );
     }
 

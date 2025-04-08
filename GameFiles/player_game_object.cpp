@@ -61,24 +61,18 @@ namespace game {
 				if (health > max_health) {
 					health = max_health;
 				}
-
-				// debug, needed until HUD is implemented
-				std::cout << "(HP) player health: " << health << " -> regenerated " << REGEN_AMOUNT << " health." << std::endl;
 			}
 		}
 
 		// Check power-up timers, if expired, reset states back to false
 		if (dp_timer.FinishedAndStop()) {
 			double_points = false;
-			std::cout << "(PU) double points ended." << std::endl;
 		}
 		if (bb_timer.FinishedAndStop()) {
 			bullet_boost = false;
-			std::cout << "(PU) bullet boost ended." << std::endl;
 		}
 		if (cs_timer.FinishedAndStop()) {
 			cold_shock = false;
-			std::cout << "(PU) cold shock ended." << std::endl;
 		}
 	}
 
@@ -90,7 +84,7 @@ namespace game {
 
 
 	/*** Decrease health by param damage ***/
-	void PlayerGameObject::TakeDamage(int recieved_dmg) {
+	bool PlayerGameObject::TakeDamage(int recieved_dmg) {
 
 		// Ensure damage isn't taken during invincibility frames
 		if (i_frames_timer.Finished() && health > 0) {
@@ -107,9 +101,12 @@ namespace game {
 				i_frames_timer.Start(INVINCIBILITY_DURATION);
 			}
 
-			// debug, keep until HUD is added
-			std::cout << "(HP) player health: " << health << " -> took " << recieved_dmg << " damage." << std::endl;
+			// indicate damage was taken
+			return true;
 		}
+
+		// indicate no damage taken
+		return false;
 	}
 
 
@@ -132,8 +129,6 @@ namespace game {
 		else {
 			points += amount;
 		}
-		// debug, keep until HUD is added
-		std::cout << "(PTS) new point amount: " << points << std::endl;
 	}
 
 
@@ -141,7 +136,6 @@ namespace game {
 	void PlayerGameObject::EnableDoublePoints(void) { 
 		double_points = true;
 		dp_timer.Start(POWER_UP_DURATION);
-		std::cout << "(PU) double points started!" << std::endl;
 	}
 
 
@@ -149,7 +143,6 @@ namespace game {
 	void PlayerGameObject::EnableBulletBoost(void) {
 		bullet_boost = true;
 		bb_timer.Start(POWER_UP_DURATION);
-		std::cout << "(PU) bullet boost started!" << std::endl;
 	}
 
 
@@ -157,7 +150,6 @@ namespace game {
 	void PlayerGameObject::EnableColdShock(void) {
 		cold_shock = true;
 		cs_timer.Start(POWER_UP_DURATION);
-		std::cout << "(PU) cold shock started!" << std::endl;
 	}
 
 }

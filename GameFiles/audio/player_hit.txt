@@ -1,5 +1,6 @@
 Source:
-GOTTA WRITE THIS LATER
+Terraria NPC Hit 17 (Target Dummy Hit Sound) by Re-Logic
+Slowed to 0.8x and applied gain
 
 License:
-CC BY 3.0
+Attribution-NonCommercial-ShareAlike 4.0 International

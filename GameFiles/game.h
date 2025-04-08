@@ -74,6 +74,15 @@ namespace game {
 
         // Master Update function, updates all the game objects
         void Update(double delta_time);
+
+        // Sub-Update functions, updates all specific components of the game
+        void UpdateCamera(double delta_time);
+        void UpdatePlayer(double delta_time);
+        void UpdateEnemies(double delta_time);
+        void UpdatePlayerProjectiles(double delta_time);
+        void UpdateGunnerProjectiles(double delta_time);
+        void UpdateCollectibles(double delta_time);
+        void UpdateHUD(double delta_time);
         
         // Enemy-Specific update helpers
         void EnemyCollisionCheck(EnemyGameObject* enemy);
@@ -92,7 +101,7 @@ namespace game {
         void SpawnPlayerBullet(void);
         void SpawnGunnerBullet(GunnerEnemy* gunner);
 
-        // Helper methods
+        // General Use Helper methods
         bool CollisionCheck(GameObject* obj_1, GameObject* obj_2);
         bool RayCircleCheck(ProjectileGameObject* bullet, GameObject* obj, float col_dist);
         void KillPlayer(void);
@@ -112,9 +121,6 @@ namespace game {
 
         // Pre-multiply alpha channels, needed for rendering transparent parts in textures
         void PremultiplyAlpha(unsigned char* image, int pixelCount);
-
-        // Helper method for fps, needed for performance monitoring
-        void DisplayFPS(double delta_time) const;
 
 
             /* PRIVATE MEMBER VARIABLES */
@@ -174,6 +180,7 @@ namespace game {
         Timer enemy_spawn_timer;
         Timer firing_cooldown;
         Timer close_window_timer;
+        Timer update_fps_timer;
 
         // Audio Variables, should be callable 
         audio_manager::AudioManager am;
@@ -187,11 +194,11 @@ namespace game {
         // Flags
         bool update_flag;
         bool holding_shoot;
+        bool holding_interact;
 
         // Trackers
         glm::vec3 cursor_pos;
         int spawn_index;
-        int enemies_alive;
 
         // Random Number Generation Helper
         std::random_device rd;

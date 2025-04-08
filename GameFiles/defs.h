@@ -22,6 +22,7 @@ namespace game {
 	// Performance related
 	const unsigned short int MAX_ENEMIES = 24;	// never exceed this many enemies spawned at once
 	const unsigned short int FPS_CAP = 180;		// set to 0 to uncap
+	const float FPS_UPDATE_INTERVAL = 0.333f;
 	const float MASTER_VOLUME = 0.2f;			// 1.0 = max, 0.0 = muted
 
 	// Math constants
@@ -41,7 +42,7 @@ namespace game {
 	// Universal timers
 	const float INTRO_DURATION = 2.3f;
 	const float DEFAULT_ERASE_TIMER = 2.5f;
-	const float ENEMY_SPAWN_DELAY = 0.5f;
+	const float ENEMY_SPAWN_DELAY = 1.5f;
 	
 
 
@@ -54,10 +55,10 @@ namespace game {
 	const unsigned short int SHOT_HIT_POINT_REWARD = 10;
 
 	// Player healing helpers
-	const float INVINCIBILITY_DURATION = 0.5f;
-	const float REGEN_CD = 5.0f;
-	const float REGEN_STEP_CD = 1.0f;
-	const unsigned short int REGEN_AMOUNT = 10;
+	const float INVINCIBILITY_DURATION = 0.15f;
+	const float REGEN_CD = 4.0f;
+	const float REGEN_STEP_CD = 0.1f;
+	const unsigned short int REGEN_AMOUNT = 1;
 
 
 
@@ -65,7 +66,7 @@ namespace game {
 
 	const float COLLECTIBLE_SPEED = 0.25f;
 	const float COLLECTIBLE_DURATION = 7.5f;
-	const float POWER_UP_SPAWN_CHANCE = 0.025f;
+	const float POWER_UP_SPAWN_CHANCE = 0.02f;
 	const float POWER_UP_DURATION = 20.0f; // power up effects will last for 20s
 
 
@@ -142,12 +143,18 @@ namespace game {
 
 		/*** HUD and Text Constants ***/
 
-	const float CORNER_TEXT_SIZE_X = 2.5f;
+	// size of hud element areas
+	const float CORNER_TEXT_SIZE_X = 3.2f;
 	const float CORNER_TEXT_SIZE_Y = 0.4f;
-	const float INFO_TEXT_SIZE_X = 4.2f;
-	const float INFO_TEXT_SIZE_Y = 0.35f;
-	const float ICON_SIZE = 0.5f;
-	const unsigned int SMALL_HUD_LEN = 16;
+	const float INFO_TEXT_SIZE_X = 4.5f;
+	const float INFO_TEXT_SIZE_Y = 0.25f;
+	const float ICON_SIZE = 0.6f;
+
+	// Margins
+	const float HUD_CORNER_MARGIN = 0.5f;
+
+	// char limits
+	const unsigned int SMALL_HUD_LEN = 18;
 	const unsigned int LONG_HUD_LEN = 40;
 
 }

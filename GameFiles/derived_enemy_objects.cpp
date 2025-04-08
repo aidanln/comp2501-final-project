@@ -60,28 +60,38 @@ namespace game {
 		}
 	}
 
+
+
 	/***************************/
-	/* ArmObject Definitions */
+	/* ArmObject Definitions   */
 	/***************************/
 
+	/*** Constructor, default values, ititalize off-screen ***/
 	ArmObject::ArmObject(const glm::vec3& offset, Geometry* geom, Shader* shader, const GLuint& texture)
-		: EnemyGameObject(glm::vec3(0.0f), geom, shader, texture), offset_from_parent(offset) {
+		: EnemyGameObject(glm::vec3(100.0f, 100.0f, 1.0f), geom, shader, texture), offset_from_parent(offset) {
 		scale_ = glm::vec2(0.3f);  // small arm
 	}
 
+
+	/*** Update position and rotation based on parent properties ***/
 	void ArmObject::UpdateFromParent(const glm::vec3& parent_pos, float parent_angle, float lerp_factor) {
+
 		// Apply rotation around parent position
 		local_angle = LerpAngle(local_angle, parent_angle, lerp_factor);
 		float s = sin(local_angle);
 		float c = cos(local_angle);
 
+		// Calculate rotated offset
 		glm::vec3 rotated_offset;
 		rotated_offset.x = offset_from_parent.x * c - offset_from_parent.y * s;
 		rotated_offset.y = offset_from_parent.x * s + offset_from_parent.y * c;
 
+		// apply offsets
 		position_ = parent_pos + rotated_offset;
 		SetRotation(local_angle - HALF_PI);
 	}
+
+
 
 	/***************************/
 	/* ChaserEnemy Definitions */
@@ -99,24 +109,30 @@ namespace game {
 		child2->SetScale(glm::vec2(1.8f, 0.4f));
 	}
 
+
 	/*** Delete children from hierarchical chain link ***/
 	ChaserEnemy::~ChaserEnemy() {
 		delete child1;
 		delete child2;
 	}
 	
+
 	/*** Update, moves the chaser using the pursuit method, updates children based on parent ***/
 	void ChaserEnemy::Update(double delta_time) {
 		EnemyGameObject::Update(delta_time);
 		position_.x += velocity_.x * CHASER_SPEED * delta_time;
 		position_.y += velocity_.y * CHASER_SPEED * delta_time;
-		// Direction facing
+
+		// calculate direction facing
 		float angle = atan2(velocity_.y, velocity_.x);
-		// Child1 transforms based on body
+
+		// child1 transforms based on body
 		child1->UpdateFromParent(position_, angle, 0.05);
-		// Child2 transforms based on child1
+
+		// child2 transforms based on child1
 		child2->UpdateFromParent(child1->GetPosition(), child1->GetLocalAngle(), 0.02);
 	}
+
 
 	/*** Override render function to render parent and children ***/
 	void ChaserEnemy::Render(const glm::mat4& view_matrix, double current_time) {

@@ -1,5 +1,6 @@
 Source:
-GOTTA WRITE THIS LATER
+Terraria Laser Rifle Shoot SFX
+Reduced volume gain
 
 License:
-CC BY 3.0
+Attribution-NonCommercial-ShareAlike 4.0 International
