@@ -33,6 +33,10 @@ namespace game {
         inline void SetWeapon(Weapon* w) { weapon = w; }
         int GetDamage(void);
 
+        // Weapon ID handlers -> 0=pistol, 1=smg, 2=rifle, 3=sniper
+        inline int GetWeaponID(void) const { return weapon_id; }
+        inline void SetWeaponID(int id) { weapon_id = id; }
+
         // Point handlers
         void AddPoints(int amount);
         inline int GetPoints(void) const { return points; }
@@ -61,6 +65,7 @@ namespace game {
 
         // i need more bullets
         Weapon* weapon;
+        unsigned short int weapon_id;
 
         // Track points, used for buying items and whatnot
         int points;

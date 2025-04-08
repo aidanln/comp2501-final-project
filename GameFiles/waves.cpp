@@ -58,7 +58,8 @@ namespace game {
 		if (enemy_type == 3) {
 			waves[current_wave].DecrementKamikazeCount();
 		}
-		waves[current_wave].Print();
+		// Debug only
+		// waves[current_wave].Print();
 	}
 
 

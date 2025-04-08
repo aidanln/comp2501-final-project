@@ -82,6 +82,7 @@ namespace game {
 	const float ORBIT_SPEED = 4.0f;
 	const float GUNNER_STAY_DIST = 3.5f;
 	const float GUNNER_EVADE_DIST = 2.5f;
+	const float GUNNER_SHOOT_DIST = 5.5f;
 
 	// Chaser
 	const unsigned short int CHASER_INIT_HP = 15;
@@ -116,7 +117,7 @@ namespace game {
 	const bool PISTOL_SEMI = true;
 
 	// SMG
-	const unsigned short int SMG_DMG = 5;
+	const unsigned short int SMG_DMG = 4;
 	const float SMG_SHOOT_CD = 0.075f;
 	const float SMG_LIFESPAN = 0.3f;
 	const float SMG_SPREAD = 0.3f;
@@ -124,7 +125,7 @@ namespace game {
 	const bool SMG_SEMI = false;
 
 	// Rifle
-	const unsigned short int RIFLE_DMG = 9;
+	const unsigned short int RIFLE_DMG = 7;
 	const float RIFLE_SHOOT_CD = 0.125f;
 	const float RIFLE_LIFESPAN = 0.5f;
 	const float RIFLE_SPREAD = 0.1f;
@@ -146,8 +147,8 @@ namespace game {
 	// size of hud element areas
 	const float CORNER_TEXT_SIZE_X = 3.2f;
 	const float CORNER_TEXT_SIZE_Y = 0.4f;
-	const float INFO_TEXT_SIZE_X = 4.5f;
-	const float INFO_TEXT_SIZE_Y = 0.25f;
+	const float INFO_TEXT_SIZE_X = 5.4f;
+	const float INFO_TEXT_SIZE_Y = 0.3f;
 	const float ICON_SIZE = 0.6f;
 
 	// Margins

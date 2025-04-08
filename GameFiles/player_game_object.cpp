@@ -18,6 +18,7 @@ namespace game {
 		double_points = false;
 		bullet_boost = false;
 		cold_shock = false;
+		weapon_id = 0;
 		
 		// initialize health timers
 		i_frames_timer.Start(0.0);
@@ -113,7 +114,7 @@ namespace game {
 	/*** Get the player's current damage, considers bullet boost flag ***/
 	int PlayerGameObject::GetDamage(void) {
 		if (bullet_boost) {
-			return weapon->GetDamage() * 2;
+			return weapon->GetDamage() * 3;
 		}
 		else {
 			return weapon->GetDamage();

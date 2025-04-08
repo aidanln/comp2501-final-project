@@ -61,8 +61,7 @@ namespace game {
         void UpdateHealth(const std::string& health);
         void UpdateFPS(const std::string& fps);
         void UpdateTime(const double& time);
-        void UpdateTopInfo(const std::string& info);
-        void UpdateBottomInfo(const std::string& info);
+        void UpdateInfo(const std::string& info);
 
         // Update Helpers for icon parts of the HUD
         inline void ToggleDoublePoints(bool tf) { icon_areas[0]->is_active = tf; }
