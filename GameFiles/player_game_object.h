@@ -50,6 +50,10 @@ namespace game {
         void EnableColdShock(void);
         inline bool IsColdShockActive(void) const { return cold_shock; }
 
+        // Knockback stuff
+        inline Timer GetKnockbackCooldown(void) const { return knockback_cooldown; }
+        void ApplyKnockback(glm::vec3& direction, int damage);
+
     private:
         // Health trackers
         short int health;
@@ -59,6 +63,7 @@ namespace game {
         Timer i_frames_timer;
         Timer regen_cd;
         Timer regen_step;
+        Timer knockback_cooldown;
 
         // Intended angle, GameObject::angle_ uses linear interpolation to reach this
         float target_angle;
@@ -77,6 +82,9 @@ namespace game {
         Timer dp_timer;
         Timer bb_timer;
         Timer cs_timer;
+
+        // max speed
+        float max_speed;
     };
 
 }

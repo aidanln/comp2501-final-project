@@ -19,6 +19,7 @@ namespace game {
 		bullet_boost = false;
 		cold_shock = false;
 		weapon_id = 0;
+		max_speed = INIT_PLAYER_MAX_SPEED;
 		
 		// initialize health timers
 		i_frames_timer.Start(0.0);
@@ -30,18 +31,22 @@ namespace game {
 	/*** Player-Specific Update function ***/
 	void PlayerGameObject::Update(double delta_time) {
 		float dt = static_cast<float>(delta_time);
+		// if done with knockback, set it back to normal speed
+		if (knockback_cooldown.FinishedAndStop()) {
+			max_speed = INIT_PLAYER_MAX_SPEED;
+		}
 
 		// Update velocity based on acceleration
 		velocity_ += acceleration_ * dt;
 
 		// Ensure velocity doesn't exceed max speed
-		if (glm::length(velocity_) > PLAYER_MAX_SPEED) {
-			velocity_ = glm::normalize(velocity_) * PLAYER_MAX_SPEED;
+		if (glm::length(velocity_) > max_speed) {
+			velocity_ = glm::normalize(velocity_) * max_speed;
 		}
 
 		// Update position based on velocity, then decelerate
 		position_ += velocity_ * dt;
-		velocity_ /= 1.01 + (dt * 3); // weird
+		velocity_ /= 1.001 + (dt * 3); // weird
 
 		// Clamp player position to ensure no OOB movement is possible
 		position_.x = glm::clamp(position_.x, -PLAYER_X_BOUND, PLAYER_X_BOUND);
@@ -103,6 +108,10 @@ namespace game {
 			}
 
 			// indicate damage was taken
+			SpendPoints(recieved_dmg * 5);
+			if (points < 0) {
+				points = 0;
+			}
 			return true;
 		}
 
@@ -153,4 +162,12 @@ namespace game {
 		cs_timer.Start(POWER_UP_DURATION);
 	}
 
+	/*** Handle knockback effect ***/
+	void PlayerGameObject::ApplyKnockback(glm::vec3& direction, int damage) {
+		TakeDamage(damage/4);
+		SetVelocity(direction);
+		// std::cout << velocity_.x << ", " << velocity_.y << std::endl;
+		max_speed = 12.0f;
+		knockback_cooldown.Start(0.2);
+	}
 }
