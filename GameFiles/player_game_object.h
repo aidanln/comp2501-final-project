@@ -26,7 +26,7 @@ namespace game {
         
         // Health handlers
         inline unsigned short int GetHealth(void) const { return health; }
-        void TakeDamage(int recieved_dmg);
+        bool TakeDamage(int recieved_dmg);
 
         // Weapon handlers
         inline Weapon* GetWeapon(void) { return weapon; }

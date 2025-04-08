@@ -118,15 +118,16 @@ namespace game {
         // Start all the Timers
         enemy_spawn_timer.Start(ENEMY_SPAWN_DELAY);
         firing_cooldown.Start(PISTOL_SHOOT_CD);
+        update_fps_timer.Start(FPS_UPDATE_INTERVAL);
 
         // Initialize default member variables
         update_flag = false;
         holding_shoot = false;
+        holding_interact = false;
         camera_pos = glm::vec3(0.0f);
         camera_target_pos = glm::vec3(0.0f);
         cursor_pos = glm::vec3(0.0f);
         spawn_index = 0;
-        enemies_alive = 0;
 
         // Audio Setup
         InitAudio();
@@ -247,6 +248,8 @@ namespace game {
 
         // Setup the player object (position, texture, vertex count)
         player = new PlayerGameObject(glm::vec3(0.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_player]);
+
+        // Setup Particles
         Particles* particles_ = new Particles();
         particles_->CreateGeometry(1); // Use 4000 particles
         ParticleSystem* particles = new ParticleSystem(glm::vec3(-0.5f, 0.0f, 0.0f), particles_, &particle_shader_, tex_[tex_orb], player);
@@ -274,7 +277,7 @@ namespace game {
 
         // Setup the vignette (lighting effect)
         vignette = new GameObject(glm::vec3(0.0f), sprite_, &sprite_shader_, tex_[tex_vignette]);
-        vignette->SetScale(glm::vec2(WORLD_SIZE));
+        vignette->SetScale(glm::vec2(45.0f));
 
         // Setup background
         background = new GameObject(glm::vec3(0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
@@ -370,8 +373,9 @@ namespace game {
             }
         }
 
-        // intro is done, so allow gameplay updates, play bg music, then run MainLoop (in main.cpp)
+        // intro is done, so handle accordingly and run MainLoop (specified in main.cpp)
         update_flag = true;
+        hud->SetHide(false);
         am.PlaySound(bg_music);
     }
 
@@ -435,11 +439,6 @@ namespace game {
             glfwSetWindowShouldClose(window_, true);
         }
 
-        // Print FPS, temporary solution until the HUD is created
-        if (glfwGetKey(window_, GLFW_KEY_F) == 1) {
-            DisplayFPS(delta_time);
-        }
-
         // Only handle input if necessary, i.e. game is still running
         if (update_flag) {
 
@@ -477,10 +476,25 @@ namespace game {
                     }
                 }
             }
-
-            // Reset holding_shoot back to false if left-click isn't pressed
             else {
+                // Reset holding_shoot back to false if left-click isn't pressed
                 holding_shoot = false;
+            }
+
+            // Handle the interact key (key: F)
+            if (glfwGetKey(window_, GLFW_KEY_F) == 1) {
+                if (!holding_interact) {
+                    /*
+                    * once buyables are implemented, this will check which buyable
+                    * the player is in range of, and apply it to them provided they
+                    * have the necessary points, with points being deducted afterwards.
+                    */
+                    holding_interact = true;
+                }
+            }
+            else {
+                // Reset holding_interact back to false if the 'F' key isn't pressed
+                holding_interact = false;
             }
 
             // Update player acceleration based on input
@@ -529,11 +543,41 @@ namespace game {
     }
 
 
-    /*** Update all the game objects ***/
+    /*** Update all the game objects, can change order by re-arranging functions ***/
     void Game::Update(double delta_time) {
 
+        // player
+        UpdatePlayer(delta_time);
 
-            /* CAMERA and LIGHTING UPDATES*/
+        // visuals
+        UpdateCamera(delta_time);
+        vignette->SetPosition(player->GetPosition());
+        for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
+            enemy_spawn_arr[i]->Update(delta_time);
+        }
+
+        // enemies
+        UpdateEnemies(delta_time);
+
+        // projectiles
+        UpdatePlayerProjectiles(delta_time);
+        UpdateGunnerProjectiles(delta_time);
+
+        // collectibles
+        UpdateCollectibles(delta_time);
+        
+        // heads-up display
+        UpdateHUD(delta_time);
+
+    }
+
+
+    /**********************************/
+    /* SPECIFIC OBJECT UPDATERS BELOW */
+    /**********************************/
+
+    /*** Update the camera position accurately, with smooth movement and OOB prevention ***/
+    void Game::UpdateCamera(double delta_time) {
 
         // apply linear interpolation movement (smooth-cam)
         camera_target_pos = player->GetPosition();
@@ -564,12 +608,11 @@ namespace game {
         camera_pos.x = glm::clamp(lerp_camera_pos.x, -dynamic_x_bound, dynamic_x_bound);
         camera_pos.y = glm::clamp(lerp_camera_pos.y, -dynamic_y_bound, dynamic_y_bound);
 
-        // move the vignette with the player
-        vignette->SetPosition(player->GetPosition());
+    }
 
 
-            /* PLAYER UPDATES */
-
+    /*** Update the player game object, ensures intended behavior every frame ***/
+    void Game::UpdatePlayer(double delta_time) {
         if (update_flag) {
             if (player->GetHealth() <= 0) {
                 KillPlayer();
@@ -583,14 +626,14 @@ namespace game {
                 PlayerShotCheck(delta_time);
             }
         }
-
-        if (player->EraseTimerCheck()) {
+        else if (player->EraseTimerCheck()) {
             player->Hide();
         }
+    }
 
 
-            /* ENEMY UPDATES */
-
+    /*** Update all the enemy game objects, ensures intended behavior every frame ***/
+    void Game::UpdateEnemies(double delta_time) {
         for (int i = 0; i < enemy_arr.size(); ++i) {
             EnemyGameObject* enemy = enemy_arr[i];
 
@@ -615,7 +658,7 @@ namespace game {
                     else {
                         enemy->Update(delta_time);
                     }
-                    
+
                     // misc updates to be called if the player is alive
                     if (update_flag) {
                         if (GunnerEnemy* gunner = dynamic_cast<GunnerEnemy*>(enemy)) {
@@ -630,10 +673,11 @@ namespace game {
                 }
             }
         }
+    }
 
 
-            /* PLAYER PROJECTILE UPDATES */
-
+    /*** Update and process all the projectiles shot by the player ***/
+    void Game::UpdatePlayerProjectiles(double delta_time) {
         for (int i = 0; i < projectile_arr.size(); ++i) {
             ProjectileGameObject* bullet = projectile_arr[i];
 
@@ -644,10 +688,11 @@ namespace game {
                 delete bullet;
             }
         }
+    }
 
-        
-            /* ENEMY PROJECTILE UPDATES */
 
+    /*** Update all the projectiles shot by the gunner enemies ***/
+    void Game::UpdateGunnerProjectiles(double delta_time) {
         for (int i = 0; i < gunner_projectile_arr.size(); ++i) {
             ProjectileGameObject* bullet = gunner_projectile_arr[i];
 
@@ -658,10 +703,11 @@ namespace game {
                 delete bullet;
             }
         }
-        
-        
-            /* COLLECTIBLE UPDATES */
+    }
 
+
+    /*** Update all the collectibles (i.e. power-ups) ***/
+    void Game::UpdateCollectibles(double delta_time) {
         for (int i = 0; i < collectible_arr.size(); ++i) {
             CollectibleGameObject* collectible = collectible_arr[i];
 
@@ -681,25 +727,39 @@ namespace game {
                 }
             }
         }
+    }
 
 
-            /* PORTAL UPDATES */
+    /*** Update all the elements of the HUD ***/
+    void Game::UpdateHUD(double delta_time) {
 
-        for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
-            enemy_spawn_arr[i]->Update(delta_time);
+        // calculate corner positions based on window dimensions and camera zoom
+        float world_width = 2.0f * CAMERA_X_BOUND * CAMERA_ZOOM;
+        float world_height = 2.0f * CAMERA_Y_BOUND * CAMERA_ZOOM;
+
+        // adjust for aspect ratio
+        float aspect_ratio = static_cast<float>(window_width_) / window_height_;
+        if (aspect_ratio > 1.0f) {
+            world_width *= aspect_ratio;
+        }
+        else {
+            world_height /= aspect_ratio;
         }
 
-
-            /* HUD UPDATES */
+        // calculate positions relative to camera
+        float rightEdge = camera_pos.x + (world_width * 0.5f) - (HUD_CORNER_MARGIN * 4);
+        float leftEdge = camera_pos.x - (world_width * 0.5f) + (HUD_CORNER_MARGIN * 4);
+        float topEdge = camera_pos.y + (world_height * 0.5f) - HUD_CORNER_MARGIN;
+        float bottomEdge = camera_pos.y - (world_height * 0.5f) + HUD_CORNER_MARGIN;
 
         // bottom left corner
-        hud->SetBottomLeftCorner(glm::vec3(-3.0f, -3.0f, 0.0f) + camera_pos);
+        hud->SetBottomLeftCorner(glm::vec3(leftEdge, bottomEdge, 0.0f));
         hud->UpdatePoints(std::to_string(player->GetPoints()));
-        hud->UpdateEnemyCount(std::to_string(enemies_alive));
-        hud->UpdateWave(std::to_string(1));
+        hud->UpdateEnemyCount(std::to_string(waves.EnemiesAlive()));
+        hud->UpdateWave(std::to_string(waves.GetCurrentWave()));
 
         // bottom right corner
-        hud->SetBottomRightCorner(glm::vec3(3.0f, -3.0f, 0.0f) + camera_pos);
+        hud->SetBottomRightCorner(glm::vec3(rightEdge, bottomEdge, 0.0f));
         hud->UpdatePowerUps(
             player->IsDoublePointsActive(),
             player->IsBulletBoostActive(),
@@ -707,26 +767,31 @@ namespace game {
         );
         hud->UpdateHealth(std::to_string(player->GetHealth()));
 
-        // top right corner, fps only
-        hud->SetTopRightCorner(glm::vec3(3.0f, 3.0f, 0.0f) + camera_pos);
-        if (delta_time > 0) {
+        // top right corner, fps only, update based on FPS_UPDATE_INTERVAL
+        hud->SetTopRightCorner(glm::vec3(rightEdge, topEdge, 0.0f));
+        if (delta_time > 0 && update_fps_timer.Finished()) {
+            update_fps_timer.Start(FPS_UPDATE_INTERVAL);
             int fps = std::floor(1 / delta_time);
-            if (FPS_CAP != 0 && fps > FPS_CAP) { 
+            if (FPS_CAP != 0 && fps > FPS_CAP) {
                 fps = FPS_CAP;
             }
             hud->UpdateFPS(std::to_string(fps));
         }
 
-        // top left corner, fps only
-        hud->SetTopLeftCorner(glm::vec3(-3.0f, 3.0f, 0.0f) + camera_pos);
-        hud->UpdateTime(std::to_string(glfwGetTime()));
+        // top left corner, time only
+        hud->SetTopLeftCorner(glm::vec3(leftEdge, topEdge, 0.0f));
+        hud->UpdateTime(glfwGetTime());
 
-        // info segments, placeholders for now
-        glm::vec3 offset(0.0f, 2.2f, 0.0f);
-        hud->SetUnderPlayer(camera_pos - offset);
+        // info segments, will hold buyable information, placeholders for now
+        hud->SetMiddleBottom(glm::vec3(camera_pos.x, camera_pos.y - 1.5f, 0.0f));
         hud->UpdateTopInfo("example top info");
         hud->UpdateBottomInfo("example bottom info");
+
     }
+
+    /**********************************/
+    /* SPECIFIC OBJECT UPDATERS ABOVE */
+    /**********************************/
 
 
     /*** Check for collisions with the param enemy ***/
@@ -764,8 +829,8 @@ namespace game {
             SpawnCollectible(enemy);
         }
 
-        // decrement the tracker
-        enemies_alive--;
+        // indicate in WaveControl that an enemy has been exploded
+        waves.EnemyExploded();
     }
 
 
@@ -810,8 +875,9 @@ namespace game {
 
                 // check for ray-circle collision
                 if (RayCircleCheck(bullet, player, collision_dist)) {
-                    player->TakeDamage(bullet->GetDamage());
-                    am.PlaySound(player_hit_sfx);
+                    if (player->TakeDamage(bullet->GetDamage())) {
+                        am.PlaySound(player_hit_sfx);
+                    }
                 }
             }
         }
@@ -848,91 +914,72 @@ namespace game {
     }
 
 
-    /*** Spawn a destroyer in a random position on screen, triggered via timer (6 seconds) ***/
+    /*** Spawn an enemy on a spawn portal according to the waves ***/
     void Game::SpawnEnemy(void) {
-        // TEMPORARY IMPLEMENTATION, WILL BE REFACTORED ONCE WAVES ARE ADDED
 
-        // generate a random number for choosing the enemy to be spawned
+        // required definitions for function logic
         std::mt19937 gen(rd());
         int gunner = 1, chaser = 2, kamikaze = 3;
-        bool exclude_chaser = false;
-        bool exclude_gunner = false;
-        bool exclude_kamikaze = false;
-
-        // Determine which numbers to exclude
         std::vector<int> possible_enemies;
 
-        // pick which enemies to spawn
-
-        if (!exclude_gunner && waves.GetWave().GetGunnerCount() > 0) {
+        // populate possible_enemies with the enemy types that can be spawned
+        if (waves.GetWave().GetGunnerCount() > 0) {
             possible_enemies.push_back(gunner);
         }
-        if (!exclude_chaser && waves.GetWave().GetChaserCount() > 0) {
+        if (waves.GetWave().GetChaserCount() > 0) {
             possible_enemies.push_back(chaser);
         }
-        if (!exclude_kamikaze && waves.GetWave().GetKamikazeCount() > 0) {
+        if (waves.GetWave().GetKamikazeCount() > 0) {
             possible_enemies.push_back(kamikaze);
         }
 
-        // next wave if no enemies to spawn
-
-        if (possible_enemies.empty()) {
-            waves.IncrementWave();
-            std::cout << "Wave complete." << std::endl;
-            exclude_gunner = false;
-            exclude_chaser = false;
-            exclude_kamikaze = false;
+        // if there are no more enemies to spawn, increment the wave
+        if (waves.EnemiesAlive() <= 0) {
+            if (waves.IncrementWave()) {
+                std::cout << "Wave complete." << std::endl;
+            }
+            else {
+                std::cout << "There are no more waves dawg. You Win!" << std::endl;
+            }
             return;
         }
 
+        // continue with spawning ONLY IF there are enemies remaining in the Wave object
+        if (possible_enemies.size() > 0) {
 
-        // random distribution based on which enemies are left to spawn
-        std::uniform_int_distribution<> temp_dis(0, possible_enemies.size() - 1);
-        int random_enemy_index = possible_enemies[temp_dis(gen)];
-        // std::cout << "Selected enemy: " << random_enemy_index << std::endl;
-        // get coordinates for the spawn based on spawn portals
-        glm::vec3 spawn_pos = enemy_spawn_arr[spawn_index]->GetPosition();
+            // get coordinates for the spawn based on spawn portals
+            glm::vec3 spawn_pos = enemy_spawn_arr[spawn_index]->GetPosition();
 
-        // increment spawn_index to specify the next portal
-        spawn_index++;
+            // handle spawn_index, specifies which portal to spawn at
+            spawn_index++;
+            if (spawn_index > 7) {
+                spawn_index = 0;
+            }
 
-        // index should never exceed 7 as this would cause vector OOB errors
-        if (spawn_index > 7) {
-            spawn_index = 0;
+            // randomly decide which enemy to spawn based on possible_enemies vector
+            std::uniform_int_distribution<> temp_dis(0, possible_enemies.size() - 1);
+            int random_enemy_index = possible_enemies[temp_dis(gen)];
+            switch (random_enemy_index) {
+
+            case 1:
+                // Spawn a Gunner, decrement the corresponding enemy counter
+                enemy_arr.push_back(new GunnerEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[1]));
+                waves.DecrementEnemyCount(gunner);
+                break;
+
+            case 2:
+                // Spawn a Chaser, decrement the corresponding enemy counter
+                enemy_arr.push_back(new ChaserEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[2]));
+                waves.DecrementEnemyCount(chaser);
+                break;
+
+            case 3:
+                // Spawn a Kamikaze, decrement the corresponding enemy counter
+                enemy_arr.push_back(new KamikazeEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[3]));
+                waves.DecrementEnemyCount(kamikaze);
+                break;
+            }
         }
-        // enemy_arr.push_back(new ChaserEnemy(glm::vec3(0, 0, 0), sprite_, &sprite_shader_, tex_[2]));
-        // use the RNG section above to determine which enemy to spawn
-        switch (random_enemy_index) {
-        case 1:
-            // Spawn a Gunner
-            enemy_arr.push_back(new GunnerEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[1]));
-            waves.DecrementEnemyCount(1);
-            if (waves.GetWave().GetGunnerCount() == 0) {
-                exclude_chaser = true;
-            }
-            break;
-
-        case 2:
-            // Spawn a Chaser
-            enemy_arr.push_back(new ChaserEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[2]));
-            waves.DecrementEnemyCount(2);
-            if (waves.GetWave().GetChaserCount() == 0) {
-                exclude_gunner = true;
-            }
-            break;
-
-        case 3:
-            // Spawn a Kamikaze
-            enemy_arr.push_back(new KamikazeEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[3]));
-            waves.DecrementEnemyCount(3);
-            if (waves.GetWave().GetKamikazeCount() == 0) {
-                exclude_kamikaze = true;
-            }
-            break;
-        }
-
-        // increment the corresponding tracker
-        enemies_alive++;
     }
 
 
@@ -1239,17 +1286,5 @@ namespace game {
             image[i * 4 + 2] = (unsigned char)(image[i * 4 + 2] * alpha);
         }
     }
-
-
-    /*** Print out the fps to the console (refactor later to display on-screen) ***/
-    void Game::DisplayFPS(double dt) const {
-        // avoid dividing by 0 
-        if (dt > 0) {
-            float fps = std::floor(1 / dt);
-            if (FPS_CAP != 0 && fps > FPS_CAP) { fps = FPS_CAP; }
-            std::cout << "Current Fps: " << fps << std::endl;
-        }
-    }
-
 
 } // namespace game

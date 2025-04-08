@@ -1,5 +1,6 @@
 Source:
-GOTTA WRITE THIS LATER
+ImpactsGunSFX on OpenGameArt by user "Eldritch Grim"
 
 License:
-CC BY 3.0
+Unspecified, Creator wrote the following...
+"[Copyright/Attribution Notice is] not necessary, I wouldn't say these are high quality anyways."

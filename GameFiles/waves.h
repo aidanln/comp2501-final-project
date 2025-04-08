@@ -11,49 +11,62 @@
 
 namespace game {
 
+    // Wave Class -> Contains the enemies of which to spawn on a wave
     class Wave {
     public:
-        // constructor for wave
-
+        // Constructor
         Wave(int gunner_count, int chaser_count, int kamikaze_count);
-        // for debugging
 
-        void print() const;
+        // For debugging
+        void Print() const;
 
-        // getters
-        int GetGunnerCount() const { return gunner_count; }
-        int GetChaserCount() const { return chaser_count; }
-        int GetKamikazeCount() const { return kamikaze_count; }
+        // Getters
+        inline int GetGunnerCount(void) const { return gunner_count; }
+        inline int GetChaserCount(void) const { return chaser_count; }
+        inline int GetKamikazeCount(void) const { return kamikaze_count; }
+        inline int GetEnemiesAlive(void) const { return enemies_alive; }
 
-        // decrement enemy counts
-        void DecrementGunnerCount() { gunner_count--; }
-        void DecrementChaserCount() { chaser_count--; }
-        void DecrementKamikazeCount() { kamikaze_count--; }
+        // Decrement enemy counts
+        inline void DecrementGunnerCount(void) { gunner_count--; }
+        inline void DecrementChaserCount(void) { chaser_count--; }
+        inline void DecrementKamikazeCount(void) { kamikaze_count--; }
+        inline void DecrementEnemiesAlive(void) { enemies_alive--; }
 
     private :
-        int chaser_count, gunner_count, kamikaze_count, total_count;
+        unsigned short int chaser_count, gunner_count, kamikaze_count, enemies_alive;
     };
 
+
+    // WaveControl Class -> Holds all the waves to be played out in the game
     class WaveControl {
     public:
+        // Constructor
         WaveControl();
-        // get which wave currently being played
-        int GetCurrentWave() const { return current_wave; }
-        // get the actual wave data for current wave
-        Wave GetWave() const { return waves[current_wave]; }
-        // increment wave counter
-        void IncrementWave() { current_wave++; }
-        // decrement count of enemy based on parameter int
+
+        // Get which wave currently being played
+        inline int GetCurrentWave(void) const { return current_wave + 1; }
+
+        // Get the actual wave data for current wave
+        inline Wave GetWave(void) const { return waves[current_wave]; }
+
+        // Increment wave counter
+        bool IncrementWave(void);
+
+        // Decrement count of enemy based on parameter int
         void DecrementEnemyCount(int enemy_type);
 
-    private:
-        // stores waves
-        std::vector<Wave> waves;
-        // store current wave
-        int current_wave;
-    };
+        // Helpers for handling enemies left in the wave
+        inline int EnemiesAlive(void) const { return waves[current_wave].GetEnemiesAlive(); }
+        inline void EnemyExploded(void) { waves[current_wave].DecrementEnemiesAlive(); }
 
+    private:
+        std::vector<Wave> waves;
+        unsigned short int current_wave;
+        unsigned short int enemies_left_in_wave;
+
+        const unsigned short int MAX_WAVES = 10;
+    };
 
 } // namespace game
 
-#endif // PROJECTILE_GAME_OBJECT_H_
+#endif

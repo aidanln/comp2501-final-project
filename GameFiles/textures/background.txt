@@ -1,5 +1,5 @@
 Source:
-OpenGameArt -> Color adjusted by me
+OpenGameArt -> Multiple image adjustments for variety and styling by Aidan Lalonde-Novales
 https://opengameart.org/content/stars-parallax-backgrounds
 
 This work is released to the Public Domain / CC0 license.
