@@ -28,6 +28,9 @@ namespace game {
         inline unsigned short int GetHealth(void) const { return health; }
         bool TakeDamage(int recieved_dmg);
 
+        // Speed handlers
+        inline float GetAccelForce(void) const { return accel_force; }
+
         // Weapon handlers
         inline Weapon* GetWeapon(void) { return weapon; }
         inline void SetWeapon(Weapon* w) { weapon = w; }
@@ -42,6 +45,10 @@ namespace game {
         inline int GetPoints(void) const { return points; }
         inline void SpendPoints(int amount) { points -= amount; }
 
+        // Knockback stuff
+        inline Timer GetKnockbackCooldown(void) const { return knockback_cooldown; }
+        void ApplyKnockback(glm::vec3& direction, int damage);
+
         // Power-up state handlers
         void EnableDoublePoints(void);
         inline bool IsDoublePointsActive(void) const { return double_points; }
@@ -50,15 +57,31 @@ namespace game {
         void EnableColdShock(void);
         inline bool IsColdShockActive(void) const { return cold_shock; }
 
-        // Knockback stuff
-        inline Timer GetKnockbackCooldown(void) const { return knockback_cooldown; }
-        void ApplyKnockback(glm::vec3& direction, int damage);
+        // Upgrade state handlers
+        void EnableArmorPlating(void);
+        inline bool IsArmorPlatingActive(void) const { return armor_plating; }
+
+        void EnableRegenCoating(void);
+        inline bool IsRegenCoatingActive(void) const { return regen_coating; }
+
+        void EnableNitroInfuse(void);
+        inline bool IsNitroInfuseActive(void) const { return nitro_infuse; }
+
+        void EnableCelestialAugment(void);
+        inline void DisableCelestialAugment(void) { celestial_augment = false; }
+        inline bool IsCelestialAugmentActive(void) const { return celestial_augment; }
 
     private:
-        // Health trackers
+        // Health member vars
         short int health;
         short int max_health;
+        float regen_cd_time;
+        float regen_step_amount;
         
+        // max speed
+        float max_speed;
+        float accel_force;
+
         // Timers for handling player health
         Timer i_frames_timer;
         Timer regen_cd;
@@ -75,16 +98,15 @@ namespace game {
         // Track points, used for buying items and whatnot
         int points;
 
-        // Power-up flags
+        // Power-up helpers (limited, on timer)
         bool double_points, bullet_boost, cold_shock;
-
-        // Power-up specific timers
         Timer dp_timer;
         Timer bb_timer;
         Timer cs_timer;
 
-        // max speed
-        float max_speed;
+        // Upgrade helpers (permanent, buyable)
+        bool armor_plating, regen_coating, nitro_infuse, celestial_augment;
+
     };
 
 }

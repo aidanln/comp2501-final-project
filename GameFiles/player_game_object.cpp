@@ -11,15 +11,26 @@ namespace game {
 		// initialize default values
 		health = PLAYER_INIT_HP;
 		max_health = health;
+		regen_cd_time = INIT_REGEN_CD;
+		regen_step_amount = INIT_REGEN_AMOUNT;
+
 		angle_ = 0;
 		target_angle = 0;
 		points = 0;
 		weapon = (0, 0, 0, 0, 0, 0);
+		weapon_id = 0;
+
+		accel_force = PLAYER_INIT_ACCEL;
+		max_speed = INIT_PLAYER_MAX_SPEED;
+
 		double_points = false;
 		bullet_boost = false;
 		cold_shock = false;
-		weapon_id = 0;
-		max_speed = INIT_PLAYER_MAX_SPEED;
+
+		armor_plating = false;
+		regen_coating = false;
+		nitro_infuse = false;
+		celestial_augment = false;
 		
 		// initialize health timers
 		i_frames_timer.Start(0.0);
@@ -31,9 +42,15 @@ namespace game {
 	/*** Player-Specific Update function ***/
 	void PlayerGameObject::Update(double delta_time) {
 		float dt = static_cast<float>(delta_time);
+
 		// if done with knockback, set it back to normal speed
 		if (knockback_cooldown.FinishedAndStop()) {
-			max_speed = INIT_PLAYER_MAX_SPEED;
+			if (nitro_infuse) {
+				max_speed = 6.4f;
+			}
+			else {
+				max_speed = INIT_PLAYER_MAX_SPEED;
+			}
 		}
 
 		// Update velocity based on acceleration
@@ -61,7 +78,7 @@ namespace game {
 			// use "steps" to regenerate, i.e. regen one time once a step has finished
 			if (regen_step.Finished()) {
 				regen_step.Start(REGEN_STEP_CD);
-				health += REGEN_AMOUNT;
+				health += regen_step_amount;
 
 				// clamp health to never exceed max_health
 				if (health > max_health) {
@@ -103,7 +120,7 @@ namespace game {
 
 			// start associated timers if not dead
 			else {
-				regen_cd.Start(REGEN_CD);
+				regen_cd.Start(regen_cd_time);
 				i_frames_timer.Start(INVINCIBILITY_DURATION);
 			}
 
@@ -142,6 +159,16 @@ namespace game {
 	}
 
 
+	/*** Handle knockback effect ***/
+	void PlayerGameObject::ApplyKnockback(glm::vec3& direction, int damage) {
+		TakeDamage(damage / 2);
+		SetVelocity(direction);
+		// std::cout << velocity_.x << ", " << velocity_.y << std::endl;
+		max_speed = 12.0f;
+		knockback_cooldown.Start(0.2);
+	}
+
+
 	/*** Handle Double Points state and timer ***/
 	void PlayerGameObject::EnableDoublePoints(void) { 
 		double_points = true;
@@ -162,12 +189,46 @@ namespace game {
 		cs_timer.Start(POWER_UP_DURATION);
 	}
 
-	/*** Handle knockback effect ***/
-	void PlayerGameObject::ApplyKnockback(glm::vec3& direction, int damage) {
-		TakeDamage(damage/4);
-		SetVelocity(direction);
-		// std::cout << velocity_.x << ", " << velocity_.y << std::endl;
-		max_speed = 12.0f;
-		knockback_cooldown.Start(0.2);
+	
+	/*** Handle enabling the armor-plating upgrade ***/
+	void PlayerGameObject::EnableArmorPlating(void) {
+		armor_plating = true;
+		max_health = 150; // 50hp increase to max health
+		health *= 1.5;
 	}
+
+
+	/*** Handle enabling the regen coating upgrade ***/
+	void PlayerGameObject::EnableRegenCoating(void) {
+		regen_coating = true;
+		regen_cd_time = 2.5f; // reduce regen cd by 1.5s
+		regen_step_amount = 2; // regens 20hp/s instead of 10hp/s
+	}
+
+
+	/*** Handle enabling the nitro-infuse upgrade ***/
+	void PlayerGameObject::EnableNitroInfuse(void) {
+		nitro_infuse = true;
+		accel_force = 30.0f; // 1.5x the acceleration
+		max_speed = 6.4f;    // 2.2u/s max speed increase
+	}
+
+
+	/*** Handle enabling the celestial augment upgrade ***/
+	void PlayerGameObject::EnableCelestialAugment(void) {
+		
+		if (!celestial_augment) {
+			celestial_augment = true;
+
+			Weapon* weapon = GetWeapon();
+
+			// BIG WEAPON BUFFS, double damage, faster rpm, becomes auto if not already
+			weapon->SetDamage(weapon->GetDamage() * 2.0);
+			weapon->SetFiringCooldown(weapon->GetFiringCooldown() * 0.8f);
+			weapon->SetSemiAuto(false);
+		}
+
+		// NOTE: only applies to current gun... if the player swaps weapons, returns to default values.
+	}
+
 }

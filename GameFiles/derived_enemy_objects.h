@@ -80,6 +80,7 @@ namespace game {
         ArmObject* GetChild1() const { return child1; }
         ArmObject* GetChild2() const { return child2; }
         ArmObject* GetChild3() const { return child3; }
+
         int GetChildCount() const { return child_count; }
 
     private:

@@ -50,15 +50,15 @@ namespace game {
 
 	// Player general values
 	const unsigned short int PLAYER_INIT_HP = 100;
-	const float PLAYER_ACCEL_FORCE = 20.0f;
+	const float PLAYER_INIT_ACCEL = 20.0f;
 	const float INIT_PLAYER_MAX_SPEED = 4.2f;
 	const unsigned short int SHOT_HIT_POINT_REWARD = 10;
 
 	// Player healing helpers
 	const float INVINCIBILITY_DURATION = 0.15f;
-	const float REGEN_CD = 4.0f;
+	const float INIT_REGEN_CD = 4.0f;
 	const float REGEN_STEP_CD = 0.1f;
-	const unsigned short int REGEN_AMOUNT = 1;
+	const unsigned short int INIT_REGEN_AMOUNT = 1;
 
 
 
@@ -66,7 +66,7 @@ namespace game {
 
 	const float COLLECTIBLE_SPEED = 0.25f;
 	const float COLLECTIBLE_DURATION = 7.5f;
-	const float POWER_UP_SPAWN_CHANCE = 0.02f;
+	const float POWER_UP_SPAWN_CHANCE = 0.025f; // 1/40 chance of power-up spawning
 	const float POWER_UP_DURATION = 20.0f; // power up effects will last for 20s
 
 
@@ -147,7 +147,7 @@ namespace game {
 	// size of hud element areas
 	const float CORNER_TEXT_SIZE_X = 3.2f;
 	const float CORNER_TEXT_SIZE_Y = 0.4f;
-	const float INFO_TEXT_SIZE_X = 5.4f;
+	const float INFO_TEXT_SIZE_X = 7.1f;
 	const float INFO_TEXT_SIZE_Y = 0.3f;
 	const float ICON_SIZE = 0.6f;
 
