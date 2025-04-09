@@ -198,6 +198,21 @@ namespace game {
             wave_complete_sfx = am.AddSound(filename.c_str());
             am.SetSoundPosition(wave_complete_sfx, 0.0, 0.0, 0.0);
 
+            // Setup the smg shot sound
+            filename = std::string(resources_directory_g).append("/audio/smg_shoot.wav");
+            smg_shoot_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(smg_shoot_sfx, 0.0, 0.0, 0.0);
+
+            // Setup the rifle shot sound
+            filename = std::string(resources_directory_g).append("/audio/rifle_shoot.wav");
+            rifle_shoot_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(rifle_shoot_sfx, 0.0, 0.0, 0.0);
+
+            // Setup the sniper shot sound
+            filename = std::string(resources_directory_g).append("/audio/sniper_shoot.wav");
+            sniper_shoot_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(sniper_shoot_sfx, 0.0, 0.0, 0.0);
+
             // Set the master volume to a low value to avoid jumpscaring the listener
             am.SetMasterGain(MASTER_VOLUME);
         }
@@ -1166,11 +1181,33 @@ namespace game {
         // pre-definitions to reduce calls and make code prettier
         Weapon* weapon = player->GetWeapon();
         glm::vec3 player_pos = player->GetPosition();
+        ProjectileGameObject* bullet;
 
         // create the bullet object and add to collection
-        ProjectileGameObject* bullet = new ProjectileGameObject(
-            player_pos, sprite_, &sprite_shader_, tex_[6], weapon->GetBulletLifespan(), weapon->GetDamage()
-        );
+        if (weapon == pistol) {
+            bullet = new ProjectileGameObject(
+                player_pos, sprite_, &sprite_shader_, tex_[6], weapon->GetBulletLifespan(), weapon->GetDamage()
+            );
+            am.PlaySound(player_shoot_sfx);
+        }
+        if (weapon == smg) {
+            bullet = new ProjectileGameObject(
+                player_pos, sprite_, &sprite_shader_, tex_[20], weapon->GetBulletLifespan(), weapon->GetDamage()
+            );
+            am.PlaySound(smg_shoot_sfx);
+        }
+        if (weapon == rifle) {
+            bullet = new ProjectileGameObject(
+                player_pos, sprite_, &sprite_shader_, tex_[21], weapon->GetBulletLifespan(), weapon->GetDamage()
+            );
+            am.PlaySound(rifle_shoot_sfx);
+        }
+        if (weapon == sniper) {
+            bullet = new ProjectileGameObject(
+                player_pos, sprite_, &sprite_shader_, tex_[22], weapon->GetBulletLifespan(), weapon->GetDamage()
+            );
+            am.PlaySound(sniper_shoot_sfx);
+        }
         projectile_arr.push_back(bullet);
 
         // randomly generate spread based on the weapon's bullet spread member var
@@ -1191,7 +1228,6 @@ namespace game {
         bullet->SetRotation(spread_angle - HALF_PI);
 
         // play the corresponding sound effect
-        am.PlaySound(player_shoot_sfx);
     }
 
 

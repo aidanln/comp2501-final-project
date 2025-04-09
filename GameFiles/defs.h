@@ -118,7 +118,7 @@ namespace game {
 
 	// SMG
 	const unsigned short int SMG_DMG = 4;
-	const float SMG_SHOOT_CD = 0.075f;
+	const float SMG_SHOOT_CD = 0.1f;
 	const float SMG_LIFESPAN = 0.3f;
 	const float SMG_SPREAD = 0.3f;
 	const float SMG_SPEED = 22.0f;
@@ -126,7 +126,7 @@ namespace game {
 
 	// Rifle
 	const unsigned short int RIFLE_DMG = 7;
-	const float RIFLE_SHOOT_CD = 0.125f;
+	const float RIFLE_SHOOT_CD = 0.175f;
 	const float RIFLE_LIFESPAN = 0.5f;
 	const float RIFLE_SPREAD = 0.1f;
 	const float RIFLE_SPEED = 26.0f;
