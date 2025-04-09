@@ -39,6 +39,10 @@ namespace game {
         // Health/Damage helpers
         void TakeDamage(int recieved_dmg);
 
+        // Scaling for health and speed
+        inline void SetHealthScale(float scale_factor) { health = floor(health * scale_factor); }
+        inline void SetSpeedScale(float scale_factor) { speed_scale_factor = scale_factor; }
+
     protected:
         // member vars to be inherited by all enemy types
         int health;
@@ -47,6 +51,7 @@ namespace game {
         bool exploded;
         float target_angle;
         glm::vec3 target_pos;
+        float speed_scale_factor;
         
 
     }; // class EnemyGameObject

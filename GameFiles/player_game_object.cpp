@@ -16,7 +16,7 @@ namespace game {
 
 		angle_ = 0;
 		target_angle = 0;
-		points = 1000000;
+		points = 0;
 		weapon = (0, 0, 0, 0, 0, 0);
 		weapon_id = 0;
 
