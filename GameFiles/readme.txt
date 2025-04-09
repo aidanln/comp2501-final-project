@@ -15,12 +15,12 @@ GitHub Repository: https://github.com/aidanln/comp2501-final-projects
 =-=-= Design Requirements =-=-=
 
 1. [1] Game mechanic 
-- In this game, you have to defeat waves of enemies in order to win. You gain points for shooting/killing enemies, but you lose points for getting hit. There are buyables like weapons and upgrades that you can spend your points on to make the game easier, but your score is tied to your rank if you win (D to S rank), so the less points you spend the harder the game is, but the higher your rank. There are 10 waves, and different amounts of enemies on each wave, which spawn at random spawn points around the map.
+- In this game, you have to defeat waves of enemies in order to win. You gain points for shooting/killing enemies, but you lose points for getting hit. There are buy areas like weapons and upgrades that you can spend your points on to make the game easier, but your score is tied to your rank if you win (D to S rank), so the less points you spend the harder the game is, but the higher your rank. There are 10 waves, and different amounts of enemies on each wave, which spawn at random spawn points around the map.
 
 2. [1] Enemies
-2.1 [ 0.2 ] - 3 different textures for gunner, chaser, and kamikaze enemies
-2.2 [ 0.8 ] - 3 different behaviours - gunner orbits, chaser follows your position, and kamikaze uses pursuit (advanced steering behaviour)
-- 3 different weapons - gunner shoots bullets, chaser has saw arm, kamikaze hits you directly (maybe add damage over time effect)
+2.1 [0.2] - 3 different textures for gunner, chaser, and kamikaze enemies
+2.2 [0.8] - 3 different behaviours - gunner orbits, chaser follows your position, and kamikaze uses pursuit (advanced steering behaviour)
+- 3 different weapons - gunner shoots bullets, chaser has saw arm, kamikaze hits you directly (add damage over time effect)
 
 3. [1] Weapons
 - Weapons player can use: 
@@ -38,18 +38,18 @@ GitHub Repository: https://github.com/aidanln/comp2501-final-projects
 - There are also 3 buyable weapons, which were described above, that can be bought with points
 
 5. [1] Movement and transformations 
-- 5.1 [0.4] All movement is handled through setting user's position
-- 5.2 [0.6] Movement is done with either physically-based or parametrically-based motion.
+- 5.1 [0.4] All movement is handled through setting position and rotation values, which are modified with transformations, which are then rendered using transformation matrices.
+- 5.2 [0.6] Player movement is physically-based, enemy movement is parametrically-based.
 
 6. [0.5] Collision detection
 - Direct collision between game objects handled with circle-to-circle collision detection, and all projectile collisions handled with ray-to-circle collision detection.
 
 7. [0.5] Game world
 - 7.1 [0.25] camera scrolling (updates based on player position)
-- 7.2 [0.25] tiled game background (background is much bigger), uses seperate sprite geometry
+- 7.2 [0.25] tiled game background (background is much bigger), uses separate sprite geometry
 
 8. [1] Particle systems
-- One particle system for the player as a trail
+- All bullets have a 'fire trail' particle system behind them, and the player has an aura around them. These are done with distinct geometry setups and vertex/fragment shaders.
 
 9. [1] Hierarchical transformation of a chain of at least three links
 - Made new arm object class (3 sprites - base, link(middle object), saw), chaser object contains 3 children, each child's position is based off of parent
@@ -59,7 +59,10 @@ GitHub Repository: https://github.com/aidanln/comp2501-final-projects
 - HUD displays different information like time elapsed, player health, enemies alive, wave number, fps (very cool)
 
 11. [1] Advanced method
-- Kamikaze enemies use pursuit advanced steering behaviour by moving based on the player's movement vector, making for snappy and predictive steering.
+- Kamikaze enemies use predictive pursuit advanced steering behaviour by moving based on the player's movement vector, making for snappy and predictive steering.
+- Gunners implement evade, moving away from the player when the player gets too close.
 
 12. [1] Bonus
-- Implement a vignette lighting effect with an image and changing depth_test and blending methods
+- Implemented a vignette lighting effect.
+- Tweaked various OpenGL settings to ensure blending is handled correctly, making the game visually appealing.
+
