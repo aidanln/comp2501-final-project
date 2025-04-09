@@ -1,0 +1,5 @@
+Source:
+Yet Another Paint.NET creation
+
+License:
+N/A, created by Aidan Lalonde-Novales

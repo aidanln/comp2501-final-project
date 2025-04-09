@@ -18,17 +18,21 @@ namespace game {
     class Weapon {
 
     public:
-        // constructor
+        // Constructor
         Weapon(int damage, float firing_cooldown, float bullet_lifespan, float bullet_spread, float bullet_speed, bool semi_auto);
 
-        // Damage Handlers
+        // Member Getters
         inline int GetDamage(void) const { return damage; }
-        inline void SetDamage(int dmg) { damage = dmg; }
         inline float GetBulletSpeed() const { return bullet_speed; }
         inline float GetBulletLifespan() const { return bullet_lifespan; }
         inline float GetBulletSpread() const { return bullet_spread; }
         inline float GetFiringCooldown() const { return firing_cooldown; }
         inline bool IsSemiAuto() const { return semi_auto; }
+
+        // Member Setters
+        inline void SetDamage(int dmg) { damage = dmg; }
+        inline void SetFiringCooldown(float cd) { firing_cooldown = cd; }
+        inline void SetSemiAuto(bool tf) { semi_auto = tf; }
 
     private:
         // member vars to be inherited by all enemy types

@@ -191,10 +191,14 @@ namespace game {
 
 	/*** Override render function to render parent and children ***/
 	void ChaserEnemy::Render(const glm::mat4& view_matrix, double current_time) {
-		EnemyGameObject::Render(view_matrix, current_time);
-		child1->Render(view_matrix, current_time);
+		
 		child2->Render(view_matrix, current_time);
+
 		child3->Render(view_matrix, current_time);
+
+		child1->Render(view_matrix, current_time);
+		
+		EnemyGameObject::Render(view_matrix, current_time);
 	}
 
 

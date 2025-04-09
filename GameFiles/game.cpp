@@ -258,37 +258,45 @@ namespace game {
             tex_smg = 25,
             tex_rifle = 26,
             tex_sniper = 27,
-            tex_kamikaze_explosion = 28
+            tex_kamikaze_explosion = 28,
+            tex_armor_plating = 29,
+            tex_regen_coating = 30,
+            tex_nitro_infuse = 31,
+            tex_celestial_augment = 32
         };
-        textures.push_back("/textures/player_ship.png");    // 0,  tex_player
-        textures.push_back("/textures/gunner_ship.png");    // 1,  tex_gunner
-        textures.push_back("/textures/chaser_ship.png");    // 2,  tex_chaser
-        textures.push_back("/textures/kamikaze_ship.png");  // 3,  tex_kamikaze
-        textures.push_back("/textures/background.png");     // 4,  tex_stars
-        textures.push_back("/textures/explosion.png");      // 5,  tex_explosion
-        textures.push_back("/textures/bullet.png");         // 6,  tex_bullet
-        textures.push_back("/textures/enemy_spawn.png");    // 7,  tex_portal
-        textures.push_back("/textures/double_points.png");  // 8,  tex_double_points
-        textures.push_back("/textures/bullet_boost.png");   // 9,  tex_bullet_boost
-        textures.push_back("/textures/cold_shock.png");     // 10, tex_cold_shock
-        textures.push_back("/textures/font.png");           // 11, tex_font
-        textures.push_back("/textures/vignette.png");       // 12, tex_vignette
-        textures.push_back("/textures/dp_icon.png");        // 13, tex_dp_icon
-        textures.push_back("/textures/bb_icon.png");        // 14, tex_bb_icon
-        textures.push_back("/textures/cs_icon.png");        // 15, tex_cs_icon
-        textures.push_back("/textures/orb.png");            // 16, tex_orb
-        textures.push_back("/textures/sawblade.png");       // 17, tex_sawblade
-        textures.push_back("/textures/base.png");           // 18, tex_base
-        textures.push_back("/textures/link.png");           // 19, tex_link
-        textures.push_back("/textures/smg_bullet.png");     // 20, tex_smg_bullet
-        textures.push_back("/textures/rifle_bullet.png");   // 21, tex_rifle_bullet
-        textures.push_back("/textures/sniper_bullet.png");  // 22, tex_sniper_bullet
-        textures.push_back("/textures/gunner_bullet.png");  // 23, tex_gunner_bullet
-        textures.push_back("/textures/buyable_border.png"); // 24, tex_border
-        textures.push_back("/textures/buyable_smg.png");    // 25, tex_smg
-        textures.push_back("/textures/buyable_rifle.png");  // 26, tex_rifle
-        textures.push_back("/textures/buyable_sniper.png"); // 27, tex_sniper
+        textures.push_back("/textures/player_ship.png");        // 0,  tex_player
+        textures.push_back("/textures/gunner_ship.png");        // 1,  tex_gunner
+        textures.push_back("/textures/chaser_ship.png");        // 2,  tex_chaser
+        textures.push_back("/textures/kamikaze_ship.png");      // 3,  tex_kamikaze
+        textures.push_back("/textures/background.png");         // 4,  tex_stars
+        textures.push_back("/textures/explosion.png");          // 5,  tex_explosion
+        textures.push_back("/textures/bullet.png");             // 6,  tex_bullet
+        textures.push_back("/textures/enemy_spawn.png");        // 7,  tex_portal
+        textures.push_back("/textures/double_points.png");      // 8,  tex_double_points
+        textures.push_back("/textures/bullet_boost.png");       // 9,  tex_bullet_boost
+        textures.push_back("/textures/cold_shock.png");         // 10, tex_cold_shock
+        textures.push_back("/textures/font.png");               // 11, tex_font
+        textures.push_back("/textures/vignette.png");           // 12, tex_vignette
+        textures.push_back("/textures/dp_icon.png");            // 13, tex_dp_icon
+        textures.push_back("/textures/bb_icon.png");            // 14, tex_bb_icon
+        textures.push_back("/textures/cs_icon.png");            // 15, tex_cs_icon
+        textures.push_back("/textures/orb.png");                // 16, tex_orb
+        textures.push_back("/textures/sawblade.png");           // 17, tex_sawblade
+        textures.push_back("/textures/base.png");               // 18, tex_base
+        textures.push_back("/textures/link.png");               // 19, tex_link
+        textures.push_back("/textures/smg_bullet.png");         // 20, tex_smg_bullet
+        textures.push_back("/textures/rifle_bullet.png");       // 21, tex_rifle_bullet
+        textures.push_back("/textures/sniper_bullet.png");      // 22, tex_sniper_bullet
+        textures.push_back("/textures/gunner_bullet.png");      // 23, tex_gunner_bullet
+        textures.push_back("/textures/buyable_border.png");     // 24, tex_border
+        textures.push_back("/textures/buyable_smg.png");        // 25, tex_smg
+        textures.push_back("/textures/buyable_rifle.png");      // 26, tex_rifle
+        textures.push_back("/textures/buyable_sniper.png");     // 27, tex_sniper
         textures.push_back("/textures/kamikaze_explosion.png"); // 28, tex_kamikaze_explosion
+        textures.push_back("/textures/armor_plating.png");      // 29, tex_armor_plating
+        textures.push_back("/textures/regen_coating.png");      // 30, tex_regen_coating
+        textures.push_back("/textures/nitro_infuse.png");       // 31, tex_nitro_infuse
+        textures.push_back("/textures/celestial_augment.png");  // 32, tex_celestial_augment
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
@@ -330,6 +338,7 @@ namespace game {
         background = new GameObject(glm::vec3(0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(WORLD_SIZE));
 
+
         /* Setup Buyable Areas */
 
         // SMG
@@ -337,29 +346,70 @@ namespace game {
             sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_smg]);
         buyable_arr.push_back(smg_buy);
         smg_buy->SetPointCost(2000);
-        smg_buy->SetNameAndCost("Press 'F' to buy SMG [2000 Points]");
+        smg_buy->SetNameAndCost("'F' to buy SMG [" +
+            std::to_string(smg_buy->GetPointCost()) + " Pts]");
+        
 
         // Rifle
         BuyableItem* rifle_buy = new BuyableItem(glm::vec3(-14.0f, 14.0f, 0.0f),
             sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_rifle]);
         buyable_arr.push_back(rifle_buy);
         rifle_buy->SetPointCost(4500);
-        rifle_buy->SetNameAndCost("Press 'F' to buy Rifle [4500 Points]");
+        rifle_buy->SetNameAndCost("'F' to buy Rifle [" +
+            std::to_string(rifle_buy->GetPointCost()) + " Pts]");
 
         // Sniper
         BuyableItem* sniper_buy = new BuyableItem(glm::vec3(14.0f, 14.0f, 0.0f),
             sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_sniper]);
         buyable_arr.push_back(sniper_buy);
         sniper_buy->SetPointCost(6500);
-        sniper_buy->SetNameAndCost("Press 'F' to buy Sniper [6500 Points]");
+        sniper_buy->SetNameAndCost("'F' to buy Sniper ["
+            + std::to_string(sniper_buy->GetPointCost()) + " Pts]");
 
-        // Define all the Weapons
+        // Armor Plating
+        BuyableItem* ap_buy = new BuyableItem(glm::vec3(12.0f, -12.0f, 0.0f),
+            sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_armor_plating]);
+        buyable_arr.push_back(ap_buy);
+        ap_buy->SetPointCost(3000);
+        ap_buy->SetNameAndCost("'F' to buy Armor Plating [" +
+            std::to_string(ap_buy->GetPointCost()) + " Pts]");
+
+        // Regen Coating
+        BuyableItem* rc_buy = new BuyableItem(glm::vec3(-12.0f, -12.0f, 0.0f),
+            sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_regen_coating]);
+        buyable_arr.push_back(rc_buy);
+        rc_buy->SetPointCost(5000);
+        rc_buy->SetNameAndCost("'F' to buy Regen Coating [" +
+            std::to_string(rc_buy->GetPointCost()) + " Pts]");
+
+        // Nitro-Infuse
+        BuyableItem* ni_buy = new BuyableItem(glm::vec3(0.0f, -6.0f, 0.0f),
+            sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_nitro_infuse]);
+        buyable_arr.push_back(ni_buy);
+        ni_buy->SetPointCost(2500);
+        ni_buy->SetNameAndCost("'F' to buy Nitro-Infuse [" +
+            std::to_string(ni_buy->GetPointCost()) + " Pts]");
+
+        // Celestial Augment
+        BuyableItem* ca_buy = new BuyableItem(glm::vec3(0.0f, -17.0f, 0.0f),
+            sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_celestial_augment]);
+        buyable_arr.push_back(ca_buy);
+        ca_buy->SetPointCost(10000);
+        ca_buy->SetNameAndCost("'F' to buy Celestial Augment [" +
+            std::to_string(ca_buy->GetPointCost()) + " Pts]");
+
+
+        /* Define all the Weapons */
+
         pistol  = new Weapon
         (PISTOL_DMG,    PISTOL_SHOOT_CD,    PISTOL_LIFESPAN,    PISTOL_SPREAD,  PISTOL_SPEED,   PISTOL_SEMI);
+
         smg     = new Weapon
         (SMG_DMG,       SMG_SHOOT_CD,       SMG_LIFESPAN,       SMG_SPREAD,     SMG_SPEED,      SMG_SEMI   );
+
         rifle   = new Weapon
         (RIFLE_DMG,     RIFLE_SHOOT_CD,     RIFLE_LIFESPAN,     RIFLE_SPREAD,   RIFLE_SPEED,    RIFLE_SEMI );
+
         sniper  = new Weapon
         (SNIPER_DMG,    SNIPER_SHOOT_CD,    SNIPER_LIFESPAN,    SNIPER_SPREAD,  SNIPER_SPEED,   SNIPER_SEMI);
 
@@ -524,19 +574,20 @@ namespace game {
             glm::vec3 up(0.0f, 1.0f, 0.0f);
             glm::vec3 left(-1.0f, 0.0f, 0.0f);
             glm::vec3 accel(0.0f);
+            float player_accel = player->GetAccelForce();
 
             // Handle physics-based movement input (keys: W, A, S, D)
             if (glfwGetKey(window_, GLFW_KEY_W) == 1) {
-                accel += up * PLAYER_ACCEL_FORCE;
+                accel += up * player_accel;
             }
             if (glfwGetKey(window_, GLFW_KEY_S) == 1) {
-                accel -= up * PLAYER_ACCEL_FORCE;
+                accel -= up * player_accel;
             }
             if (glfwGetKey(window_, GLFW_KEY_A) == 1) {
-                accel += left * PLAYER_ACCEL_FORCE;
+                accel += left * player_accel;
             }
             if (glfwGetKey(window_, GLFW_KEY_D) == 1) {
-                accel -= left * PLAYER_ACCEL_FORCE;
+                accel -= left * player_accel;
             }
 
             // Handle firing a bullet (mouse: LEFT-CLICK)
@@ -563,35 +614,9 @@ namespace game {
             if (glfwGetKey(window_, GLFW_KEY_F) == 1) {
                 if (!holding_interact) {
                     if (interact_id >= 1) {
-                        BuyableItem* buy_area = buyable_arr[interact_id - 1];
-
-                        if (player->GetPoints() >= buy_area->GetPointCost()
-                            && player->GetWeaponID() != interact_id) {
-
-                            player->SpendPoints(buy_area->GetPointCost());
-
-                            switch (interact_id) {
-
-                            case 1:
-                                // handle buying the SMG
-                                player->SetWeapon(smg);
-                                player->SetWeaponID(1);
-                                break;
-
-                            case 2:
-                                // handle buying the rifle
-                                player->SetWeapon(rifle);
-                                player->SetWeaponID(2);
-                                break;
-
-                            case 3:
-                                // handle buying the sniper
-                                player->SetWeapon(sniper);
-                                player->SetWeaponID(3);
-                                break;
-                            }
-                        }
+                        HandlePlayerPurchase();
                     }
+                    // ensure the player doesn't multi-buy
                     holding_interact = true;
                 }
             }
@@ -606,6 +631,80 @@ namespace game {
             // Debug, kills the player instantly (keys: K)
             if (glfwGetKey(window_, GLFW_KEY_K) == 1) {
                 KillPlayer();
+            }
+        }
+    }
+
+
+    /*** Handle the purchasing of a weapon or upgrade ***/
+    void Game::HandlePlayerPurchase(void) {
+        BuyableItem* buy_area = buyable_arr[interact_id - 1];
+
+        if (player->GetPoints() >= buy_area->GetPointCost()
+            && player->GetWeaponID() != interact_id) {
+
+            int cost = buy_area->GetPointCost();
+            switch (interact_id) {
+
+            case 1:
+                // handle buying the SMG
+                player->SpendPoints(cost);
+                player->SetWeapon(smg);
+                player->SetWeaponID(1);
+                player->DisableCelestialAugment();
+                break;
+
+            case 2:
+                // handle buying the rifle
+                player->SpendPoints(cost);
+                player->SetWeapon(rifle);
+                player->SetWeaponID(2);
+                player->DisableCelestialAugment();
+                break;
+
+            case 3:
+                // handle buying the sniper
+                player->SpendPoints(cost);
+                player->SetWeapon(sniper);
+                player->SetWeaponID(3);
+                player->DisableCelestialAugment();
+                break;
+
+            case 4:
+                // handle buying the armor plating upgrade
+                if (!player->IsArmorPlatingActive()) {
+                    player->SpendPoints(cost);
+                    player->EnableArmorPlating();
+                }
+                break;
+
+            case 5:
+                // handle buying the regen coating upgrade
+                if (!player->IsRegenCoatingActive()) {
+                    player->SpendPoints(cost);
+                    player->EnableRegenCoating();
+                }
+                break;
+
+            case 6:
+                // handle buying the nitro-infuse upgrade
+                if (!player->IsNitroInfuseActive()) {
+                    player->SpendPoints(cost);
+                    player->EnableNitroInfuse();
+                }
+                break;
+
+            case 7:
+                // handle buying the celestial augment upgrade
+                if (!player->IsCelestialAugmentActive()) {
+                    player->SpendPoints(cost);
+                    player->EnableCelestialAugment();
+                }
+                break;
+
+            default:
+                // error handling
+                std::cerr << "error with buying an item by index" << std::endl;
             }
         }
     }
@@ -951,7 +1050,7 @@ namespace game {
                 player->GetKnockbackCooldown().Start(1.0f);
             }
         }
-        if (CollisionCheck(player, enemy)) {
+        if (enemy && CollisionCheck(player, enemy)) {
             enemy->TakeDamage(enemy->GetHealth());
             player->TakeDamage(enemy->GetDamage());
             am.PlaySound(player_hit_sfx);

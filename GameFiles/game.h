@@ -70,6 +70,9 @@ namespace game {
         // Handle user input
         void HandleControls(double delta_time);
 
+        // Handle purchasing an item
+        void HandlePlayerPurchase(void);
+
         // Update the cursor tracker variable to be accurate each tick
         void UpdateCursorPosition(void);
 
