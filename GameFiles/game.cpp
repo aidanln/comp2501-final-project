@@ -213,6 +213,16 @@ namespace game {
             sniper_shoot_sfx = am.AddSound(filename.c_str());
             am.SetSoundPosition(sniper_shoot_sfx, 0.0, 0.0, 0.0);
 
+            // Setup the purchase sound
+            filename = std::string(resources_directory_g).append("/audio/purchase.wav");
+            purchase_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(purchase_sfx, 0.0, 0.0, 0.0);
+
+            // Setup the purchase sound
+            filename = std::string(resources_directory_g).append("/audio/win_game.wav");
+            win_game_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(win_game_sfx, 0.0, 0.0, 0.0);
+
             // Set the master volume to a low value to avoid jumpscaring the listener
             am.SetMasterGain(MASTER_VOLUME);
         }
@@ -262,7 +272,8 @@ namespace game {
             tex_armor_plating = 29,
             tex_regen_coating = 30,
             tex_nitro_infuse = 31,
-            tex_celestial_augment = 32
+            tex_celestial_augment = 32,
+            tex_win_screen = 33
         };
         textures.push_back("/textures/player_ship.png");        // 0,  tex_player
         textures.push_back("/textures/gunner_ship.png");        // 1,  tex_gunner
@@ -297,6 +308,7 @@ namespace game {
         textures.push_back("/textures/regen_coating.png");      // 30, tex_regen_coating
         textures.push_back("/textures/nitro_infuse.png");       // 31, tex_nitro_infuse
         textures.push_back("/textures/celestial_augment.png");  // 32, tex_celestial_augment
+        textures.push_back("/textures/win_screen.png");         // 33, tex_win_screen
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
@@ -418,6 +430,10 @@ namespace game {
 
         // Set knockback cooldown on game start
         player->GetKnockbackCooldown().Start(1.0);
+
+        // Initialize win image
+        winImage = new GameObject(glm::vec3(0, 0, 0), sprite_, &sprite_shader_, tex_[tex_win_screen]);
+        winImage->SetScale(glm::vec2(0.0f));
     }
 
 
@@ -644,6 +660,7 @@ namespace game {
             && player->GetWeaponID() != interact_id) {
 
             int cost = buy_area->GetPointCost();
+            am.PlaySound(purchase_sfx);
             switch (interact_id) {
 
             case 1:
@@ -1230,6 +1247,7 @@ namespace game {
                 }
                 std::cout << "There are no more waves dawg. You Win!" << std::endl;
                 std::cout << "Your rank is: " << rank << "." << std::endl;
+                WinGame();
             }
             return;
         }
@@ -1436,6 +1454,16 @@ namespace game {
     }
 
 
+    /*** Trigger Win Game ***/
+    void Game::WinGame(void) {
+        am.PlaySound(win_game_sfx);
+        update_flag = false;
+        close_window_timer.Start(6.0f);
+        player->SetScale(glm::vec2(0.0f));
+        winImage->SetPosition(player->GetPosition());
+        winImage->SetScale(glm::vec2(10.0f));
+    }
+
     /*** Render the Game World ***/
     void Game::Render(void) {
 
@@ -1505,6 +1533,8 @@ namespace game {
         player->Render(view_matrix, current_time_);
 
         vignette->Render(view_matrix, current_time_);
+
+        winImage->Render(view_matrix, current_time_);
 
         hud->RenderAll(view_matrix, current_time_);
 
