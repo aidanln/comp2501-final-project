@@ -214,6 +214,8 @@ namespace game {
 		health = KAMIKAZE_INIT_HP;
 		damage = KAMIKAZE_INIT_DMG;
 		point_reward = KAMIKAZE_POINT_REWARD;
+		explosion_radius = 0.0f;
+		explosion_active = false;
 	}
 
 	

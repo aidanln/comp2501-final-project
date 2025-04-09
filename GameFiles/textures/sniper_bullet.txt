@@ -1,1 +1,5 @@
-PLACEHOLDER
+Source:
+https://opengameart.org/content/bullet-symbol -> slightly edited
+
+License:
+Public domain

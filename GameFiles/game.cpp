@@ -198,6 +198,21 @@ namespace game {
             wave_complete_sfx = am.AddSound(filename.c_str());
             am.SetSoundPosition(wave_complete_sfx, 0.0, 0.0, 0.0);
 
+            // Setup the smg shot sound
+            filename = std::string(resources_directory_g).append("/audio/smg_shoot.wav");
+            smg_shoot_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(smg_shoot_sfx, 0.0, 0.0, 0.0);
+
+            // Setup the rifle shot sound
+            filename = std::string(resources_directory_g).append("/audio/rifle_shoot.wav");
+            rifle_shoot_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(rifle_shoot_sfx, 0.0, 0.0, 0.0);
+
+            // Setup the sniper shot sound
+            filename = std::string(resources_directory_g).append("/audio/sniper_shoot.wav");
+            sniper_shoot_sfx = am.AddSound(filename.c_str());
+            am.SetSoundPosition(sniper_shoot_sfx, 0.0, 0.0, 0.0);
+
             // Set the master volume to a low value to avoid jumpscaring the listener
             am.SetMasterGain(MASTER_VOLUME);
         }
@@ -243,10 +258,11 @@ namespace game {
             tex_smg = 25,
             tex_rifle = 26,
             tex_sniper = 27,
-            tex_armor_plating = 28,
-            tex_regen_coating = 29,
-            tex_nitro_infuse = 30,
-            tex_celestial_augment = 31
+            tex_kamikaze_explosion = 28,
+            tex_armor_plating = 29,
+            tex_regen_coating = 30,
+            tex_nitro_infuse = 31,
+            tex_celestial_augment = 32
         };
         textures.push_back("/textures/player_ship.png");        // 0,  tex_player
         textures.push_back("/textures/gunner_ship.png");        // 1,  tex_gunner
@@ -276,10 +292,11 @@ namespace game {
         textures.push_back("/textures/buyable_smg.png");        // 25, tex_smg
         textures.push_back("/textures/buyable_rifle.png");      // 26, tex_rifle
         textures.push_back("/textures/buyable_sniper.png");     // 27, tex_sniper
-        textures.push_back("/textures/armor_plating.png");      // 28, tex_armor_plating
-        textures.push_back("/textures/regen_coating.png");      // 29, tex_regen_coating
-        textures.push_back("/textures/nitro_infuse.png");       // 30, tex_nitro_infuse
-        textures.push_back("/textures/celestial_augment.png");  // 31, tex_celestial_augment
+        textures.push_back("/textures/kamikaze_explosion.png"); // 28, tex_kamikaze_explosion
+        textures.push_back("/textures/armor_plating.png");      // 29, tex_armor_plating
+        textures.push_back("/textures/regen_coating.png");      // 30, tex_regen_coating
+        textures.push_back("/textures/nitro_infuse.png");       // 31, tex_nitro_infuse
+        textures.push_back("/textures/celestial_augment.png");  // 32, tex_celestial_augment
         LoadTextures(textures);
 
         // Setup the player object (position, texture, vertex count)
@@ -399,6 +416,7 @@ namespace game {
         // Set the default weapon (pistol)
         player->SetWeapon(pistol);
 
+        // Set knockback cooldown on game start
         player->GetKnockbackCooldown().Start(1.0);
     }
 
@@ -852,6 +870,16 @@ namespace game {
         for (int i = 0; i < enemy_arr.size(); ++i) {
             EnemyGameObject* enemy = enemy_arr[i];
 
+            // Kamikaze D.O.T effect
+            if (KamikazeEnemy* kamikaze = dynamic_cast<KamikazeEnemy*>(enemy)) {
+                if (kamikaze->IsExplosionActive()) {
+                    float dist = glm::length(player->GetPosition() - enemy->GetPosition());
+                    if (dist < kamikaze->GetExplosionRadius()) {
+                        player->TakeDamage(2); // or scale with delta_time for DoT
+                    }
+                }
+            }
+
             if (enemy->EraseTimerCheck()) {
                 enemy_arr.erase(enemy_arr.begin() + i);
                 delete enemy;
@@ -1038,10 +1066,23 @@ namespace game {
             chaser->GetChild1()->SetScale(glm::vec2(0.0f));
             chaser->GetChild2()->SetScale(glm::vec2(0.0f));
             chaser->GetChild3()->SetScale(glm::vec2(0.0f));
+            enemy->SetTexture(tex_[5]); // explosion texture
+            enemy->SetScale(glm::vec2(1.8f));
+        }
+        // handle kamikaze explosion so as to activate the explosion and set it to a different texture
+        else if (KamikazeEnemy* kamikaze = dynamic_cast<KamikazeEnemy*>(enemy)) {
+            kamikaze->SetDamage(0);
+            enemy->SetTexture(tex_[28]);
+            enemy->SetScale(glm::vec2(3.0f));
+
+            kamikaze->SetExplosionRadius(enemy->GetScale().x/2);
+            kamikaze->ActivateExplosion();
+        }
+        else {
+            enemy->SetTexture(tex_[5]); // explosion texture
+            enemy->SetScale(glm::vec2(1.8f));
         }
         enemy->Explode();
-        enemy->SetTexture(tex_[5]); // explosion texture
-        enemy->SetScale(glm::vec2(1.8f));
         enemy->StartEraseTimer();
 
         // play explosion sound
@@ -1143,7 +1184,6 @@ namespace game {
 
     /*** Spawn an enemy on a spawn portal according to the waves ***/
     void Game::SpawnEnemy(void) {
-
         // required definitions for function logic
         std::mt19937 gen(rd());
         int gunner = 1, chaser = 2, kamikaze = 3;
@@ -1170,22 +1210,22 @@ namespace game {
             else {
                 int points = player->GetPoints();
                 std::string rank = "";
-                if (points < 30000) {
+                if (points < 20000) {
                     rank = "D";
                 }
-                if (points >= 30000 && points < 35000) {
+                if (points >= 20000 && points < 25000) {
                     rank = "C";
                 }
-                if (points >= 35000 && points < 40000) {
+                if (points >= 25000 && points < 30000) {
                     rank = "B";
                 }
-                if (points >= 40000 && points < 45000) {
+                if (points >= 30000 && points < 35000) {
                     rank = "A";
                 }
-                if (points >= 45000 && points < 50000) {
+                if (points >= 35000 && points < 40000) {
                     rank = "A+";
                 }
-                if (points >= 50000) {
+                if (points >= 40000) {
                     rank = "S";
                 }
                 std::cout << "There are no more waves dawg. You Win!" << std::endl;
@@ -1265,11 +1305,33 @@ namespace game {
         // pre-definitions to reduce calls and make code prettier
         Weapon* weapon = player->GetWeapon();
         glm::vec3 player_pos = player->GetPosition();
+        ProjectileGameObject* bullet;
 
         // create the bullet object and add to collection
-        ProjectileGameObject* bullet = new ProjectileGameObject(
-            player_pos, sprite_, &sprite_shader_, tex_[6], weapon->GetBulletLifespan(), weapon->GetDamage()
-        );
+        if (weapon == pistol) {
+            bullet = new ProjectileGameObject(
+                player_pos, sprite_, &sprite_shader_, tex_[6], weapon->GetBulletLifespan(), weapon->GetDamage()
+            );
+            am.PlaySound(player_shoot_sfx);
+        }
+        if (weapon == smg) {
+            bullet = new ProjectileGameObject(
+                player_pos, sprite_, &sprite_shader_, tex_[20], weapon->GetBulletLifespan(), weapon->GetDamage()
+            );
+            am.PlaySound(smg_shoot_sfx);
+        }
+        if (weapon == rifle) {
+            bullet = new ProjectileGameObject(
+                player_pos, sprite_, &sprite_shader_, tex_[21], weapon->GetBulletLifespan(), weapon->GetDamage()
+            );
+            am.PlaySound(rifle_shoot_sfx);
+        }
+        if (weapon == sniper) {
+            bullet = new ProjectileGameObject(
+                player_pos, sprite_, &sprite_shader_, tex_[22], weapon->GetBulletLifespan(), weapon->GetDamage()
+            );
+            am.PlaySound(sniper_shoot_sfx);
+        }
         projectile_arr.push_back(bullet);
 
         // randomly generate spread based on the weapon's bullet spread member var
@@ -1290,7 +1352,6 @@ namespace game {
         bullet->SetRotation(spread_angle - HALF_PI);
 
         // play the corresponding sound effect
-        am.PlaySound(player_shoot_sfx);
     }
 
 
@@ -1433,12 +1494,12 @@ namespace game {
             projectile_arr[i]->Render(view_matrix, current_time_);
         }
 
-        for (int i = 0; i < enemy_arr.size(); ++i) {
-            enemy_arr[i]->Render(view_matrix, current_time_);
-        }
-
         for (int i = 0; i < collectible_arr.size(); ++i) {
             collectible_arr[i]->Render(view_matrix, current_time_);
+        }
+
+        for (int i = 0; i < enemy_arr.size(); ++i) {
+            enemy_arr[i]->Render(view_matrix, current_time_);
         }
 
         player->Render(view_matrix, current_time_);

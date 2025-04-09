@@ -1,6 +1,5 @@
 Source:
-Modification of the Bullet provided in the Demo Files by Oliver
-https://opengameart.org/content/bullet-symbol
+https://opengameart.org/content/bullet-symbol -> slightly edited
 
 License:
 Public domain
