@@ -20,6 +20,9 @@ namespace game {
 		weapon = (0, 0, 0, 0, 0, 0);
 		weapon_id = 0;
 
+		// debugging buyables and other stuff
+		//points = 100000;
+
 		accel_force = PLAYER_INIT_ACCEL;
 		max_speed = INIT_PLAYER_MAX_SPEED;
 

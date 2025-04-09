@@ -43,6 +43,10 @@ namespace game {
 		Wave wave9 (15, 15, 5);
 		Wave wave10 (20, 30, 15);
 
+		// needed for debugging win screen
+		//current_wave = 9;
+		//Wave wave10 (0, 0, 1);
+
 		waves.insert(waves.end(), { wave1, wave2, wave3, wave4, wave5, wave6, wave7, wave8, wave9, wave10 });
 	}
 

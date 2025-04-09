@@ -24,7 +24,7 @@ namespace game {
 	const unsigned short int FPS_CAP = 180;		// set to 0 to uncap
 	const float FPS_UPDATE_INTERVAL = 0.333f;
 	const float MASTER_VOLUME = 0.2f;			// 1.0 = max, 0.0 = muted
-	const int PARTICLE_AMOUNT = 500;			// more particles leads to worse performance
+	const int PARTICLE_AMOUNT = 80;
 
 	// Math constants
 	const float PI = glm::pi<float>();
@@ -41,7 +41,7 @@ namespace game {
 	const float PLAYER_Y_BOUND = 19.5f;
 
 	// Universal timers
-	const float INTRO_DURATION = 5.4f;
+	const float INTRO_DURATION = 6.0f;
 	const float DEFAULT_ERASE_TIMER = 2.5f;
 	const float ENEMY_SPAWN_DELAY = 1.5f;
 	

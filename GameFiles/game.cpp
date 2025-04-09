@@ -30,6 +30,7 @@ namespace game {
         delete sprite_;
         delete tiling_sprite_;
         delete particles_;
+        delete player_particles_;
 
         // Close window
         glfwDestroyWindow(window_);
@@ -113,14 +114,26 @@ namespace game {
         particles_temp->CreateGeometry(PARTICLE_AMOUNT);
         particles_ = particles_temp;
 
+        // Initialize player particle geometry
+        Particles* particles_temp_2 = new Particles();
+        particles_temp_2->CreatePlayerGeometry(PARTICLE_AMOUNT * 5.0f);
+        player_particles_ = particles_temp_2;
+
         // Initialize sprite shader
-        sprite_shader_.Init((resources_directory_g + std::string("/sprite_vertex_shader.glsl")).c_str(), (resources_directory_g + std::string("/sprite_fragment_shader.glsl")).c_str());
+        sprite_shader_.Init((resources_directory_g + std::string("/sprite_vertex_shader.glsl")).c_str(),
+            (resources_directory_g + std::string("/sprite_fragment_shader.glsl")).c_str());
         
         // Initialize text shader
-        text_shader_.Init((resources_directory_g + std::string("/sprite_vertex_shader.glsl")).c_str(), (resources_directory_g + std::string("/text_fragment_shader.glsl")).c_str());
+        text_shader_.Init((resources_directory_g + std::string("/sprite_vertex_shader.glsl")).c_str(),
+            (resources_directory_g + std::string("/text_fragment_shader.glsl")).c_str());
 
         // Initialize particle shader
-        particle_shader_.Init((resources_directory_g + std::string("/particle_vertex_shader.glsl")).c_str(), (resources_directory_g + std::string("/particle_fragment_shader.glsl")).c_str());
+        particle_shader_.Init((resources_directory_g + std::string("/particle_vertex_shader.glsl")).c_str(),
+            (resources_directory_g + std::string("/particle_fragment_shader.glsl")).c_str());
+
+        // Initialize player particle shader
+        player_particle_shader_.Init((resources_directory_g + std::string("/particle_vertex_shader_2.glsl")).c_str(),
+            (resources_directory_g + std::string("/particle_fragment_shader_2.glsl")).c_str());
 
         // Initialize time
         current_time_ = 0.0;
@@ -134,11 +147,12 @@ namespace game {
         update_flag = false;
         holding_shoot = false;
         holding_interact = false;
+        game_won = false;
         camera_pos = glm::vec3(0.0f);
         camera_target_pos = glm::vec3(0.0f);
         cursor_pos = glm::vec3(0.0f);
         title_offset = glm::vec3(0.0f, 2.3f, 0.0f);
-        spawn_index = 0;
+        win_image_offset = glm::vec3(0.0f, -1.1f, 0.0f);
         interact_id = 0;
 
         // Audio Setup
@@ -322,8 +336,12 @@ namespace game {
         textures.push_back("/textures/win_screen.png");         // 33, tex_win_screen
         LoadTextures(textures);
 
-        // Setup the player object (position, texture, vertex count)
+        // Setup the player object and its particle aura
         player = new PlayerGameObject(glm::vec3(0.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_player]);
+        ParticleSystem* player_particles = new ParticleSystem(
+            glm::vec3(0.0f), player_particles_, &player_particle_shader_, tex_[16], player
+        );
+        particle_system_arr.push_back(player_particles);
 
         // Setup 8 enemy spawn points on the outside of the map (represented by portal sprites)
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(16.0f, -9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
@@ -346,16 +364,13 @@ namespace game {
         vignette = new GameObject(glm::vec3(0.0f), sprite_, &sprite_shader_, tex_[tex_vignette]);
         vignette->SetScale(glm::vec2(45.0f));
 
+        // Initialize win image
+        win_image = new GameObject(glm::vec3(0, 0, 0), sprite_, &sprite_shader_, tex_[tex_win_screen]);
+        win_image->Hide();
+
         // Setup background
         background = new GameObject(glm::vec3(0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(WORLD_SIZE));
-
-        // Setup Particles
-        ParticleSystem* test_particle_system = new ParticleSystem(
-            glm::vec3(0.0f, -0.45f, 0.0f), particles_, &particle_shader_, tex_[tex_orb], player
-        );
-        test_particle_system->SetScale(glm::vec2(0.2f));
-        particle_system_arr.push_back(test_particle_system);
 
 
         /* Setup Buyable Areas */
@@ -438,9 +453,6 @@ namespace game {
         // Set knockback cooldown on game start
         player->GetKnockbackCooldown().Start(1.0f);
 
-        // Initialize win image
-        winImage = new GameObject(glm::vec3(0, 0, 0), sprite_, &sprite_shader_, tex_[tex_win_screen]);
-        winImage->SetScale(glm::vec2(0.0f));
     }
 
 
@@ -507,22 +519,41 @@ namespace game {
         intro_timer.Start(INTRO_DURATION);
         am.PlaySound(game_start_sfx);
         double last_time = glfwGetTime();
+        double intro_start_time = glfwGetTime();
 
         // hang until the intro timer is done
         while (!intro_timer.Finished()) {
 
+            // exit if specified by the user
             if (glfwWindowShouldClose(window_)) { break; }
 
-            // from MainLoop()
+            // track time
             double current_time = glfwGetTime();
+            double time_in_intro = current_time - intro_start_time;
             double delta_time = current_time - last_time;
             last_time = current_time;
 
+            // change title to show a countdown
+            if (time_in_intro >= 3 && time_in_intro < 4) {
+                std::string ready_str = hud->CenterAlignString("Starting in 3...", SMALL_HUD_LEN);
+                title->SetText(ready_str);
+            }
+            else if (time_in_intro >= 4 && time_in_intro < 5) {
+                std::string ready_str = hud->CenterAlignString("Starting in 2...", SMALL_HUD_LEN);
+                title->SetText(ready_str);
+            }
+            else if (time_in_intro >= 5) {
+                std::string ready_str = hud->CenterAlignString("Starting in 1...", SMALL_HUD_LEN);
+                title->SetText(ready_str);
+            }
+
+            // from MainLoop()
             glfwPollEvents();
             HandleControls(delta_time);
             Render();
             glfwSwapBuffers(window_);
 
+            // enforce fps cap
             if (FPS_CAP != 0) {
                 while (1 / delta_time > FPS_CAP) {
                     delta_time = glfwGetTime() - last_time;
@@ -783,11 +814,12 @@ namespace game {
         UpdateCamera(delta_time);
         vignette->SetPosition(player->GetPosition());
         title->SetPosition(camera_pos + title_offset);
+        win_image->SetPosition(camera_pos + win_image_offset);
 
         // player
         UpdatePlayer(delta_time);
 
-        // fixed areas
+        // fixed areas (enemy spawn portals, buy areas)
         for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
             enemy_spawn_arr[i]->Update(delta_time);
         }
@@ -799,6 +831,16 @@ namespace game {
         // projectiles
         UpdatePlayerProjectiles(delta_time);
         UpdateGunnerProjectiles(delta_time);
+
+        // particles
+        for (int i = 0; i < particle_system_arr.size(); ++i) {
+            ParticleSystem* ps = particle_system_arr[i];
+            ps->Update(delta_time);
+            if (ps->EraseTimerCheck()) {
+                particle_system_arr.erase(particle_system_arr.begin() + i);
+                delete ps;
+            }
+        }
 
         // collectibles
         UpdateCollectibles(delta_time);
@@ -1216,6 +1258,7 @@ namespace game {
 
     /*** Spawn an enemy on a spawn portal according to the waves ***/
     void Game::SpawnEnemy(void) {
+
         // required definitions for function logic
         std::mt19937 gen(rd());
         int gunner = 1, chaser = 2, kamikaze = 3;
@@ -1241,29 +1284,10 @@ namespace game {
                 enemy_spawn_timer.Start(2.0f);
             }
             else {
-                int points = player->GetPoints();
-                std::string rank = "";
-                if (points < 15000) {
-                    rank = "D";
+                if (!game_won) {
+                    WinGame();
+                    game_won = true;
                 }
-                if (points >= 15000 && points < 20000) {
-                    rank = "C";
-                }
-                if (points >= 20000 && points < 25000) {
-                    rank = "B";
-                }
-                if (points >= 25000 && points < 30000) {
-                    rank = "A";
-                }
-                if (points >= 30000 && points < 35000) {
-                    rank = "A+";
-                }
-                if (points >= 35000) {
-                    rank = "S";
-                }
-                std::cout << "There are no more waves dawg. You Win!" << std::endl;
-                std::cout << "Your rank is: " << rank << "." << std::endl;
-                WinGame();
             }
             return;
         }
@@ -1272,17 +1296,13 @@ namespace game {
         if (possible_enemies.size() > 0) {
 
             // get coordinates for the spawn based on spawn portals
+            std::uniform_int_distribution<> spawn_dis(0, 7);
+            int spawn_index = spawn_dis(gen);
             glm::vec3 spawn_pos = enemy_spawn_arr[spawn_index]->GetPosition();
 
-            // handle spawn_index, specifies which portal to spawn at
-            spawn_index++;
-            if (spawn_index > 7) {
-                spawn_index = 0;
-            }
-
             // randomly decide which enemy to spawn based on possible_enemies vector
-            std::uniform_int_distribution<> temp_dis(0, possible_enemies.size() - 1);
-            int random_enemy_index = possible_enemies[temp_dis(gen)];
+            std::uniform_int_distribution<> enemy_dis(0, possible_enemies.size() - 1);
+            int random_enemy_index = possible_enemies[enemy_dis(gen)];
             switch (random_enemy_index) {
 
             case 1:
@@ -1369,25 +1389,31 @@ namespace game {
             );
             am.PlaySound(player_shoot_sfx);
         }
-        if (weapon == smg) {
+        else if (weapon == smg) {
             bullet = new ProjectileGameObject(
                 player_pos, sprite_, &sprite_shader_, tex_[20], weapon->GetBulletLifespan(), weapon->GetDamage()
             );
             am.PlaySound(smg_shoot_sfx);
         }
-        if (weapon == rifle) {
+        else if (weapon == rifle) {
             bullet = new ProjectileGameObject(
                 player_pos, sprite_, &sprite_shader_, tex_[21], weapon->GetBulletLifespan(), weapon->GetDamage()
             );
             am.PlaySound(rifle_shoot_sfx);
         }
-        if (weapon == sniper) {
+        else if (weapon == sniper) {
             bullet = new ProjectileGameObject(
                 player_pos, sprite_, &sprite_shader_, tex_[22], weapon->GetBulletLifespan(), weapon->GetDamage()
             );
             am.PlaySound(sniper_shoot_sfx);
         }
         projectile_arr.push_back(bullet);
+
+        // add a particle effect to the bullet, enum should have 16 = tex_orb
+        ParticleSystem* bullet_particles = new ParticleSystem(
+            glm::vec3(0.0f), particles_, &particle_shader_, tex_[16], bullet
+        );
+        particle_system_arr.push_back(bullet_particles);
 
         // randomly generate spread based on the weapon's bullet spread member var
         std::random_device rd;
@@ -1406,7 +1432,6 @@ namespace game {
         bullet->SetVelocity(spread_direction * weapon->GetBulletSpeed());
         bullet->SetRotation(spread_angle - HALF_PI);
 
-        // play the corresponding sound effect
     }
 
 
@@ -1418,6 +1443,12 @@ namespace game {
             gunner->GetPosition(), sprite_, &sprite_shader_, tex_[6], GUNNER_BULLET_LIFESPAN, gunner->GetBulletDamage()
         );
         gunner_projectile_arr.push_back(bullet);
+
+        // add a particle effect to the bullet, enum should have 16 = tex_orb
+        ParticleSystem* bullet_particles = new ParticleSystem(
+            glm::vec3(0.0f), particles_, &particle_shader_, tex_[16], bullet
+        );
+        particle_system_arr.push_back(bullet_particles);
 
         // set appropriate physical properties
         glm::vec3 aim_line = player->GetPosition() - gunner->GetPosition();
@@ -1457,7 +1488,6 @@ namespace game {
 
                 // collision confirmed, handle it, then return true
                 bullet->ImpactOccured();
-                bullet->Hide();
                 return true;
             }
         }
@@ -1479,6 +1509,7 @@ namespace game {
 
         // needed for later use
         std::string game_over_str = hud->CenterAlignString("GAME OVER!", SMALL_HUD_LEN);
+        title->SetText(game_over_str);
 
         // Game Specific
         close_window_timer.Start(6.0f);
@@ -1495,13 +1526,40 @@ namespace game {
 
     /*** Trigger Win Game ***/
     void Game::WinGame(void) {
+
+        // audio/visual indication that the player won
         am.PlaySound(win_game_sfx);
-        update_flag = false;
-        close_window_timer.Start(6.0f);
-        player->SetScale(glm::vec2(0.0f));
-        winImage->SetPosition(player->GetPosition());
-        winImage->SetScale(glm::vec2(10.0f));
+        win_image->SetScale(glm::vec2(6.5f, 5.0f));
+
+        // rank calculation
+        int points = player->GetPoints();
+        std::string rank = "";
+        if (points < 15000) {
+            rank = "D";
+        } else if (points >= 15000 && points < 20000) {
+            rank = "C";
+        } else if (points >= 20000 && points < 25000) {
+            rank = "B";
+        } else if (points >= 25000 && points < 30000) {
+            rank = "A";
+        } else if (points >= 30000 && points < 35000) {
+            rank = "A+";
+        } else if (points >= 35000) {
+            rank = "S";
+        }
+
+        // display the rank on the title
+        std::string rank_str = hud->CenterAlignString(("Your Rank: " + rank), SMALL_HUD_LEN);
+        title->SetText(rank_str);
+
+        // console messages
+        std::cout << "You Win! All the waves have been beaten." << std::endl;
+        std::cout << "Your rank is: " << rank << "." << std::endl;
+
+        // close the window
+        close_window_timer.Start(8.0f);
     }
+
 
     /*** Render the Game World ***/
     void Game::Render(void) {
@@ -1551,6 +1609,8 @@ namespace game {
             enemy_spawn_arr[i]->Render(view_matrix, current_time_);
         }
 
+        win_image->Render(view_matrix, current_time_);
+
         for (int i = 0; i < buyable_arr.size(); ++i) {
             buyable_arr[i]->Render(view_matrix, current_time_);
             buyable_arr[i]->GetIcon()->Render(view_matrix, current_time_);
@@ -1583,8 +1643,6 @@ namespace game {
 
         // Overlays
         vignette->Render(view_matrix, current_time_);
-
-        winImage->Render(view_matrix, current_time_);
       
         title->Render(view_matrix, current_time_);
 

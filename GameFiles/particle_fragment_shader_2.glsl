@@ -12,7 +12,7 @@ void main()
 {
     // Sample texture
     vec4 color = texture2D(onetex, uv_interp);
-    color.rgb = vec3(0.8, 0.6, 0.1) * color_interp.r;
+    color.rgb = vec3(0.9, 0.9, 0.9) * color_interp.r;
 
     // Assign color to fragment
     gl_FragColor = vec4(color.r, color.g, color.b, color.a);

@@ -15,6 +15,7 @@ namespace game {
         velocity_ = glm::vec3(0.0f);
         acceleration_ = glm::vec3(0.0f);
         ghost_ = false;
+        hidden_ = false;
     }
 
 
@@ -117,6 +118,13 @@ namespace game {
     /*** Checks if the erase timer has finished ***/
     bool GameObject::EraseTimerCheck() {
         return erase_timer_.Finished();
+    }
+
+
+    /*** Hides an Object by setting scale to 0, detectable via hidden_ flag ***/
+    void GameObject::Hide(void) {
+        scale_ = glm::vec2(0.0f);
+        hidden_ = true;
     }
 
 } // namespace game
