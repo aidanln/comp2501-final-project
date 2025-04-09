@@ -163,7 +163,6 @@ namespace game {
 	void PlayerGameObject::ApplyKnockback(glm::vec3& direction, int damage) {
 		TakeDamage(damage / 2);
 		SetVelocity(direction);
-		// std::cout << velocity_.x << ", " << velocity_.y << std::endl;
 		max_speed = 12.0f;
 		knockback_cooldown.Start(0.2);
 	}

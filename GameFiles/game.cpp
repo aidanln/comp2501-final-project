@@ -29,6 +29,7 @@ namespace game {
         // Free rendering resources
         delete sprite_;
         delete tiling_sprite_;
+        delete particles_;
 
         // Close window
         glfwDestroyWindow(window_);
@@ -76,7 +77,6 @@ namespace game {
 
         // Enable pre-multipled alpha blending so that transparency in .png files is shown correctly
         glEnable(GL_BLEND);
-        // glEnable(GL_DEPTH_TEST);
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         // Set event callbacks
@@ -103,14 +103,24 @@ namespace game {
         // Initialize sprite geometry
         sprite_ = new Sprite();
         sprite_->CreateGeometry();
+
+        // Initialize tiling sprite geometry
         tiling_sprite_ = new Sprite();
         tiling_sprite_->CreateTilingGeometry();
+
+        // Initialize particle geometry
+        Particles* particles_temp = new Particles();
+        particles_temp->CreateGeometry(PARTICLE_AMOUNT);
+        particles_ = particles_temp;
 
         // Initialize sprite shader
         sprite_shader_.Init((resources_directory_g + std::string("/sprite_vertex_shader.glsl")).c_str(), (resources_directory_g + std::string("/sprite_fragment_shader.glsl")).c_str());
         
         // Initialize text shader
         text_shader_.Init((resources_directory_g + std::string("/sprite_vertex_shader.glsl")).c_str(), (resources_directory_g + std::string("/text_fragment_shader.glsl")).c_str());
+
+        // Initialize particle shader
+        particle_shader_.Init((resources_directory_g + std::string("/particle_vertex_shader.glsl")).c_str(), (resources_directory_g + std::string("/particle_fragment_shader.glsl")).c_str());
 
         // Initialize time
         current_time_ = 0.0;
@@ -127,6 +137,7 @@ namespace game {
         camera_pos = glm::vec3(0.0f);
         camera_target_pos = glm::vec3(0.0f);
         cursor_pos = glm::vec3(0.0f);
+        title_offset = glm::vec3(0.0f, 2.3f, 0.0f);
         spawn_index = 0;
         interact_id = 0;
 
@@ -302,14 +313,6 @@ namespace game {
         // Setup the player object (position, texture, vertex count)
         player = new PlayerGameObject(glm::vec3(0.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_player]);
 
-        // Setup Particles
-        Particles* particles_ = new Particles();
-        particles_->CreateGeometry(1); // Use 4000 particles
-        ParticleSystem* particles = new ParticleSystem(glm::vec3(-0.5f, 0.0f, 0.0f), particles_, &particle_shader_, tex_[tex_orb], player);
-        particles->SetParticleScale(0.2, 0.2);
-        // particles->SetRotation(HALF_PI*2);
-        particle_arr.push_back(particles);
-
         // Setup 8 enemy spawn points on the outside of the map (represented by portal sprites)
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(16.0f, -9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(16.0f, 9.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
@@ -320,15 +323,12 @@ namespace game {
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(-9.0f, -16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
         enemy_spawn_arr.push_back(new EnemySpawn(glm::vec3(9.0f, -16.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_portal]));
 
-        // DEBUG, start with all the power-ups spawned in for testing purposes
-        /*
-        collectible_arr.push_back(new CollectibleGameObject(glm::vec3(-4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_double_points], 0));
-        collectible_arr.push_back(new CollectibleGameObject(glm::vec3(0.0f, 3.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_bullet_boost], 1));
-        collectible_arr.push_back(new CollectibleGameObject(glm::vec3(4.0f, 0.0f, 0.0f), sprite_, &sprite_shader_, tex_[tex_cold_shock], 2));
-        */
-
         // Setup the HUD
         hud = new HUD(sprite_, &text_shader_, &sprite_shader_, tex_[tex_font], tex_[tex_dp_icon], tex_[tex_bb_icon], tex_[tex_cs_icon]);
+
+        // Setup the title
+        title = new TextGameObject(title_offset, sprite_, &text_shader_, tex_[tex_font]);
+        title->SetText("Celestial Onslaught");
 
         // Setup the vignette (lighting effect)
         vignette = new GameObject(glm::vec3(0.0f), sprite_, &sprite_shader_, tex_[tex_vignette]);
@@ -337,6 +337,13 @@ namespace game {
         // Setup background
         background = new GameObject(glm::vec3(0.0f), tiling_sprite_, &sprite_shader_, tex_[tex_stars]);
         background->SetScale(glm::vec2(WORLD_SIZE));
+
+        // Setup Particles
+        ParticleSystem* test_particle_system = new ParticleSystem(
+            glm::vec3(0.0f, -0.45f, 0.0f), particles_, &particle_shader_, tex_[tex_orb], player
+        );
+        test_particle_system->SetScale(glm::vec2(0.2f));
+        particle_system_arr.push_back(test_particle_system);
 
 
         /* Setup Buyable Areas */
@@ -399,7 +406,7 @@ namespace game {
             std::to_string(ca_buy->GetPointCost()) + " Pts]");
 
 
-        /* Define all the Weapons */
+        /* Setup all the Weapons */
 
         pistol  = new Weapon
         (PISTOL_DMG,    PISTOL_SHOOT_CD,    PISTOL_LIFESPAN,    PISTOL_SPREAD,  PISTOL_SPEED,   PISTOL_SEMI);
@@ -417,7 +424,8 @@ namespace game {
         player->SetWeapon(pistol);
 
         // Set knockback cooldown on game start
-        player->GetKnockbackCooldown().Start(1.0);
+        player->GetKnockbackCooldown().Start(1.0f);
+
     }
 
 
@@ -429,6 +437,7 @@ namespace game {
         delete background;
         delete vignette;
         delete hud;
+        delete title;
 
         // delete enemies
         for (int i = 0; i < enemy_arr.size(); ++i) {
@@ -458,6 +467,11 @@ namespace game {
         // delete buyables
         for (int i = 0; i < buyable_arr.size(); ++i) {
             delete buyable_arr[i];
+        }
+
+        // delete particles
+        for (int i = 0; i < particle_system_arr.size(); ++i) {
+            delete particle_system_arr[i];
         }
 
         // delete weapons
@@ -504,6 +518,7 @@ namespace game {
         // intro is done, so handle accordingly and run MainLoop (specified in main.cpp)
         update_flag = true;
         hud->SetHide(false);
+        title->SetText(" ");
         am.PlaySound(bg_music);
     }
 
@@ -748,9 +763,10 @@ namespace game {
     /*** Update all the game objects, can change order by re-arranging functions ***/
     void Game::Update(double delta_time) {
 
-        // visuals (camera and lighting)
+        // visuals
         UpdateCamera(delta_time);
         vignette->SetPosition(player->GetPosition());
+        title->SetPosition(camera_pos + title_offset);
 
         // player
         UpdatePlayer(delta_time);
@@ -1422,6 +1438,9 @@ namespace game {
         player->StartEraseTimer();
         am.PlaySound(boom_sfx);
 
+        // needed for later use
+        std::string game_over_str = hud->CenterAlignString("GAME OVER!", SMALL_HUD_LEN);
+
         // Game Specific
         close_window_timer.Start(6.0f);
         update_flag = false;
@@ -1429,15 +1448,16 @@ namespace game {
     }
 
 
-    /*** Trigger a Game Over ***/
+    /*** Closes the window, ending the gameplay ***/
     void Game::GameOver(void) {
-        std::cout << "\n\tGAME OVER!\n" << std::endl;
         glfwSetWindowShouldClose(window_, true);
     }
 
 
     /*** Render the Game World ***/
     void Game::Render(void) {
+
+        /* Setup the view matrix and OpenGL settings appropriately */
 
         // Clear background
         glClearColor(
@@ -1475,6 +1495,7 @@ namespace game {
         
         /* Render ALL the GameObjects in storage (order: back to front) */
         
+        // Background
         background->Render(view_matrix, current_time_);
 
         for (int i = 0; i < enemy_spawn_arr.size(); ++i) {
@@ -1485,6 +1506,13 @@ namespace game {
             buyable_arr[i]->Render(view_matrix, current_time_);
             buyable_arr[i]->GetIcon()->Render(view_matrix, current_time_);
         }
+
+        // Foreground
+        glBlendFunc(GL_ONE, GL_ONE);
+        for (int i = 0; i < particle_system_arr.size(); i++) {
+            particle_system_arr[i]->Render(view_matrix, glfwGetTime());
+        }
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         for (int i = 0; i < gunner_projectile_arr.size(); ++i) {
             gunner_projectile_arr[i]->Render(view_matrix, current_time_);
@@ -1504,15 +1532,13 @@ namespace game {
 
         player->Render(view_matrix, current_time_);
 
+        // Overlays
         vignette->Render(view_matrix, current_time_);
+
+        title->Render(view_matrix, current_time_);
 
         hud->RenderAll(view_matrix, current_time_);
 
-        /*
-        for (int i = 0; i < particle_arr.size(); i++) {
-            particle_arr[i]->Render(view_matrix, current_time_);
-        }
-        */
 
         // Set back to true, prevents the resize bug from occurring
         glDepthMask(GL_TRUE);

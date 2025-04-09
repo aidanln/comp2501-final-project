@@ -8,7 +8,7 @@ namespace game {
     TextGameObject::TextGameObject(const glm::vec3 &position, Geometry *geom, Shader *shader, GLuint texture)
         : GameObject(position, geom, shader, texture) {
         text_ = "";
-        scale_ = glm::vec2(3.0f, 1.0f);
+        scale_ = glm::vec2(7.2f, 0.9f);
     }
 
 

@@ -24,6 +24,7 @@ namespace game {
 	const unsigned short int FPS_CAP = 180;		// set to 0 to uncap
 	const float FPS_UPDATE_INTERVAL = 0.333f;
 	const float MASTER_VOLUME = 0.2f;			// 1.0 = max, 0.0 = muted
+	const int PARTICLE_AMOUNT = 500;			// more particles leads to worse performance
 
 	// Math constants
 	const float PI = glm::pi<float>();
@@ -40,7 +41,7 @@ namespace game {
 	const float PLAYER_Y_BOUND = 19.5f;
 
 	// Universal timers
-	const float INTRO_DURATION = 2.3f;
+	const float INTRO_DURATION = 5.4f;
 	const float DEFAULT_ERASE_TIMER = 2.5f;
 	const float ENEMY_SPAWN_DELAY = 1.5f;
 	
@@ -117,7 +118,7 @@ namespace game {
 	const bool PISTOL_SEMI = true;
 
 	// SMG
-	const unsigned short int SMG_DMG = 4;
+	const unsigned short int SMG_DMG = 2;
 	const float SMG_SHOOT_CD = 0.1f;
 	const float SMG_LIFESPAN = 0.3f;
 	const float SMG_SPREAD = 0.3f;
@@ -125,8 +126,8 @@ namespace game {
 	const bool SMG_SEMI = false;
 
 	// Rifle
-	const unsigned short int RIFLE_DMG = 7;
-	const float RIFLE_SHOOT_CD = 0.175f;
+	const unsigned short int RIFLE_DMG = 4;
+	const float RIFLE_SHOOT_CD = 0.16f;
 	const float RIFLE_LIFESPAN = 0.5f;
 	const float RIFLE_SPREAD = 0.1f;
 	const float RIFLE_SPEED = 26.0f;
@@ -155,7 +156,7 @@ namespace game {
 	const float HUD_CORNER_MARGIN = 0.5f;
 
 	// char limits
-	const unsigned int SMALL_HUD_LEN = 18;
+	const unsigned int SMALL_HUD_LEN = 19;
 	const unsigned int LONG_HUD_LEN = 40;
 
 }

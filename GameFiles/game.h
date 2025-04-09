@@ -137,21 +137,19 @@ namespace game {
         int window_width_;
         int window_height_;
 
-        // Sprite geometry
+        // All geometry types (dash)
         Geometry* sprite_;
         Geometry* tiling_sprite_;
-
-        // Particle geometry
         Geometry* particles_;
 
         // Shader for rendering sprites in the scene
         Shader sprite_shader_;
 
-        // Shader for rendering particles
-        Shader particle_shader_;
-
         // Shader for rendering texts
         Shader text_shader_;
+
+        // Shader for rendering particles
+        Shader particle_shader_;
 
         // References to textures, this needs to be a pointer
         GLuint* tex_;
@@ -164,12 +162,13 @@ namespace game {
         GameObject* vignette;
         GameObject* background;
         HUD* hud;
+        TextGameObject* title;
         std::vector<EnemyGameObject*> enemy_arr;
         std::vector<EnemySpawn*> enemy_spawn_arr;
         std::vector<ProjectileGameObject*> projectile_arr;
         std::vector<ProjectileGameObject*> gunner_projectile_arr;
         std::vector<CollectibleGameObject*> collectible_arr;
-        std::vector<ParticleSystem*> particle_arr;
+        std::vector<ParticleSystem*> particle_system_arr;
         std::vector<BuyableItem*> buyable_arr;
 
         // Wave control object
@@ -196,6 +195,7 @@ namespace game {
         // Camera Attributes, needed for smooth movement
         glm::vec3 camera_pos;
         glm::vec3 camera_target_pos;
+        glm::vec3 title_offset;
 
         // Flags
         bool update_flag;
