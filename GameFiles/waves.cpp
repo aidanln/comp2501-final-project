@@ -29,7 +29,7 @@ namespace game {
 	/*** Contructor, initializes all the waves and default values for member vars ***/
 	WaveControl::WaveControl() {
 
-		current_wave = 0;
+		current_wave = 9;
 		enemies_left_in_wave = 0;
 
 		Wave wave1 (0, 8, 0);
@@ -41,7 +41,8 @@ namespace game {
 		Wave wave7 (0, 0, 20);
 		Wave wave8 (5, 25, 5);
 		Wave wave9 (15, 15, 5);
-		Wave wave10 (20, 30, 15);
+		// Wave wave10 (20, 30, 15);
+		Wave wave10(0, 0, 1);
 
 		waves.insert(waves.end(), { wave1, wave2, wave3, wave4, wave5, wave6, wave7, wave8, wave9, wave10 });
 	}
