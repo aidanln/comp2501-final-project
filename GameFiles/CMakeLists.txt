@@ -54,6 +54,8 @@ set(SRCS
     weapons.cpp
     particle_fragment_shader.glsl
     particle_vertex_shader.glsl
+    particle_fragment_shader_2.glsl
+    particle_vertex_shader_2.glsl
     sprite_vertex_shader.glsl
     sprite_fragment_shader.glsl
     text_fragment_shader.glsl

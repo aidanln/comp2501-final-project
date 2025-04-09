@@ -20,7 +20,7 @@ void main() {
 
     vec4 pos;               // Vertex position
     float cycle = 2.0;      // Duration of cycle in seconds
-    float speed = 4.0;      // Speed adjustment constant
+    float speed = 6.0;      // Speed adjustment constant
     float gravity = 2.8;    // Gravity in this world
     float acttime;          // Cyclic time
 

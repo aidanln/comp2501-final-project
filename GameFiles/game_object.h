@@ -60,8 +60,9 @@ namespace game {
             virtual void StartEraseTimer(void); 
             virtual bool EraseTimerCheck(void);
 
-            // Hide an object by setting scale to 0 (prob not the most optimal way)
-            inline void Hide(void) { scale_ = glm::vec2(0.0f); }
+            // Object Hiding (scale=0 and a flag) Handling
+            void Hide(void);
+            inline bool IsHidden(void) const { return hidden_; }
             
 
         protected:
@@ -72,6 +73,7 @@ namespace game {
             glm::vec3 velocity_;
             glm::vec3 acceleration_;
             bool ghost_;
+            bool hidden_;
 
             // Geometry
             Geometry *geometry_;

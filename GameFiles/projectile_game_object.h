@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include "game_object.h"
+#include "particle_system.h"
 #include "defs.h"
 
 namespace game {
@@ -27,7 +28,7 @@ namespace game {
         inline bool GetImpact(void) const { return impact_flag; }
 
         // setter, indicates an impact has occured
-        inline void ImpactOccured(void) { impact_flag = true; }
+        void ImpactOccured(void);
 
     private:
         // private member variables

@@ -26,4 +26,11 @@ namespace game {
 		time_elapsed += delta_time;
 	}
 
+
+	/*** Handle an impact occurring ***/
+	void ProjectileGameObject::ImpactOccured(void) {
+		impact_flag = true;
+		Hide();
+	}
+
 } // namespace game

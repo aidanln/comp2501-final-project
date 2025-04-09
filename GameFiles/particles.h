@@ -3,6 +3,11 @@
 #ifndef PARTICLES_H_
 #define PARTICLES_H_
 
+#include <iostream>
+#include <string>
+#include <random>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "geometry.h"
 
 namespace game {
@@ -13,12 +18,19 @@ namespace game {
     public:
         Particles(void);
 
-        // Create the geometry (called once)
+        // Random num from 0-1
+        float RandNum(void);
+
+        // Create different geometries
         void CreateGeometry(int num_particles);
+        void CreatePlayerGeometry(int num_particles);
 
         // Use the geometry
         void SetGeometry(GLuint shader_program);
 
+    private:
+        // Random Number Generation Helper
+        std::random_device rd;
     };
 
 }

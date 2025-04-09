@@ -142,6 +142,7 @@ namespace game {
         Geometry* sprite_;
         Geometry* tiling_sprite_;
         Geometry* particles_;
+        Geometry* player_particles_;
 
         // Shader for rendering sprites in the scene
         Shader sprite_shader_;
@@ -151,6 +152,7 @@ namespace game {
 
         // Shader for rendering particles
         Shader particle_shader_;
+        Shader player_particle_shader_;
 
         // References to textures, this needs to be a pointer
         GLuint* tex_;
@@ -159,11 +161,14 @@ namespace game {
         double current_time_;
 
         // Game Object Storage, now seperated to optimize the Update() function
-        PlayerGameObject* player;
         GameObject* vignette;
         GameObject* background;
+        GameObject* win_image;
+
         HUD* hud;
         TextGameObject* title;
+
+        PlayerGameObject* player;
         std::vector<EnemyGameObject*> enemy_arr;
         std::vector<EnemySpawn*> enemy_spawn_arr;
         std::vector<ProjectileGameObject*> projectile_arr;
@@ -171,7 +176,7 @@ namespace game {
         std::vector<CollectibleGameObject*> collectible_arr;
         std::vector<ParticleSystem*> particle_system_arr;
         std::vector<BuyableItem*> buyable_arr;
-        GameObject* winImage;
+        
 
         // Wave control object
         WaveControl waves;
@@ -199,15 +204,16 @@ namespace game {
         glm::vec3 camera_pos;
         glm::vec3 camera_target_pos;
         glm::vec3 title_offset;
+        glm::vec3 win_image_offset;
 
         // Flags
         bool update_flag;
         bool holding_shoot;
         bool holding_interact;
+        bool game_won;
 
         // Trackers
         glm::vec3 cursor_pos;
-        int spawn_index;
         int interact_id;
 
         // Random Number Generation Helper
