@@ -105,8 +105,16 @@ namespace game {
 
         void UpdateTarget(GameObject* obj) override;
 
+        // Methods for kamikaze explosion D.O.T effect
+        bool IsExplosionActive() const { return explosion_active; }
+        void ActivateExplosion() { explosion_active = true; }
+        float GetExplosionRadius() const { return explosion_radius; }
+        void SetExplosionRadius(float r) { explosion_radius = r; }
+
     private:
-        // No member vars yet
+        // Member variables for kamikaze explsion D.O.T effect
+        float explosion_radius;
+        bool explosion_active;
     };
 
 }
