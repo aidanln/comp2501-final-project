@@ -48,18 +48,18 @@ GitHub Repository: https://github.com/aidanln/comp2501-final-projects
 - 7.1 [0.25] camera scrolling (updates based on player position)
 - 7.2 [0.25] tiled game background (background is much bigger), uses seperate sprite geometry
 
-8. Particle systems
-- // still broken //
+8. [1] Particle systems
+- One particle system for the player as a trail
 
 9. [1] Hierarchical transformation of a chain of at least three links
 - Made new arm object class (3 sprites - base, link(middle object), saw), chaser object contains 3 children, each child's position is based off of parent
 - e.g. child1 based off of parent, child2 based off of child1, child3 based off of child2
 
-10. UI
+10. [1] UI
 - HUD displays different information like time elapsed, player health, enemies alive, wave number, fps (very cool)
 
-11. Advanced method
+11. [1] Advanced method
 - Kamikaze enemies use pursuit advanced steering behaviour by moving based on the player's movement vector, making for snappy and predictive steering.
 
-12. Bonus
+12. [1] Bonus
 - Implement a vignette lighting effect with an image and changing depth_test and blending methods

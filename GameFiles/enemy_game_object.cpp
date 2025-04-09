@@ -16,7 +16,7 @@ namespace game {
 		exploded = false;
 		target_angle = 0.0f;
 		target_pos = glm::vec3(0.0f);
-		
+		speed_scale_factor = 1;
 	}
 
 

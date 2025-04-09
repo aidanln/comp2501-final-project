@@ -379,7 +379,7 @@ namespace game {
         BuyableItem* smg_buy = new BuyableItem(glm::vec3(0.0f, 9.0f, 0.0f),
             sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_smg]);
         buyable_arr.push_back(smg_buy);
-        smg_buy->SetPointCost(2000);
+        smg_buy->SetPointCost(3000);
         smg_buy->SetNameAndCost("'F' to buy SMG [" +
             std::to_string(smg_buy->GetPointCost()) + " Pts]");
         
@@ -388,7 +388,7 @@ namespace game {
         BuyableItem* rifle_buy = new BuyableItem(glm::vec3(-14.0f, 14.0f, 0.0f),
             sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_rifle]);
         buyable_arr.push_back(rifle_buy);
-        rifle_buy->SetPointCost(4500);
+        rifle_buy->SetPointCost(4000);
         rifle_buy->SetNameAndCost("'F' to buy Rifle [" +
             std::to_string(rifle_buy->GetPointCost()) + " Pts]");
 
@@ -396,7 +396,7 @@ namespace game {
         BuyableItem* sniper_buy = new BuyableItem(glm::vec3(14.0f, 14.0f, 0.0f),
             sprite_, &sprite_shader_, tex_[tex_border], tex_[tex_sniper]);
         buyable_arr.push_back(sniper_buy);
-        sniper_buy->SetPointCost(6500);
+        sniper_buy->SetPointCost(5000);
         sniper_buy->SetNameAndCost("'F' to buy Sniper ["
             + std::to_string(sniper_buy->GetPointCost()) + " Pts]");
 
@@ -1263,6 +1263,7 @@ namespace game {
         std::mt19937 gen(rd());
         int gunner = 1, chaser = 2, kamikaze = 3;
         std::vector<int> possible_enemies;
+        EnemyGameObject* new_enemy = nullptr;
 
         // populate possible_enemies with the enemy types that can be spawned
         if (waves.GetWave().GetGunnerCount() > 0) {
@@ -1306,21 +1307,42 @@ namespace game {
 
             case 1:
                 // Spawn a Gunner, decrement the corresponding enemy counter
-                enemy_arr.push_back(new GunnerEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[1]));
+                new_enemy = new GunnerEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[1]);
                 waves.DecrementEnemyCount(gunner);
                 break;
 
             case 2:
                 // Spawn a Chaser, decrement the corresponding enemy counter
-                enemy_arr.push_back(new ChaserEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[2], tex_[18], tex_[19], tex_[17]));
+                new_enemy = new ChaserEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[2], tex_[18], tex_[19], tex_[17]);
                 waves.DecrementEnemyCount(chaser);
                 break;
 
             case 3:
                 // Spawn a Kamikaze, decrement the corresponding enemy counter
-                enemy_arr.push_back(new KamikazeEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[3]));
+                new_enemy = new KamikazeEnemy(spawn_pos, sprite_, &sprite_shader_, tex_[3]);
                 waves.DecrementEnemyCount(kamikaze);
                 break;
+            }
+
+            // scale enemy health and speed based on current wave
+            if (new_enemy) {
+                if (waves.GetCurrentWave() == 4) {
+                    new_enemy->SetHealthScale(1.2);
+                }
+                else if (waves.GetCurrentWave() == 6) {
+                    new_enemy->SetHealthScale(1.2);
+                    new_enemy->SetSpeedScale(1.05);
+                }
+                else if (waves.GetCurrentWave() == 8) {
+                    new_enemy->SetHealthScale(1.5);
+                    new_enemy->SetSpeedScale(1.1);
+                }
+                else if (waves.GetCurrentWave() == 10) {
+                    new_enemy->SetHealthScale(1.75);
+                    new_enemy->SetSpeedScale(1.2);
+                }
+
+                enemy_arr.push_back(new_enemy);
             }
         }
     }
@@ -1512,17 +1534,17 @@ namespace game {
         // rank calculation
         int points = player->GetPoints();
         std::string rank = "";
-        if (points < 20000) {
+        if (points < 15000) {
             rank = "D";
-        } else if (points >= 20000 && points < 25000) {
+        } else if (points >= 15000 && points < 20000) {
             rank = "C";
-        } else if (points >= 25000 && points < 30000) {
+        } else if (points >= 20000 && points < 25000) {
             rank = "B";
-        } else if (points >= 30000 && points < 35000) {
+        } else if (points >= 25000 && points < 30000) {
             rank = "A";
-        } else if (points >= 35000 && points < 40000) {
+        } else if (points >= 30000 && points < 35000) {
             rank = "A+";
-        } else if (points >= 40000) {
+        } else if (points >= 35000) {
             rank = "S";
         }
 

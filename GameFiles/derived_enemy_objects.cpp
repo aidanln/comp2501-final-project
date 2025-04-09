@@ -32,12 +32,12 @@ namespace game {
 
 		// move the orbit origin TOWARDS the player if the gunner is far away
 		if (distance_to_player > GUNNER_STAY_DIST) {
-			origin_pos += velocity_ * GUNNER_SPEED * dt;
+			origin_pos += velocity_ * GUNNER_SPEED * speed_scale_factor * dt;
 		}
 
 		// move the orbit origin AWAY FROM the player if the player approaches
 		else if (distance_to_player < GUNNER_EVADE_DIST) {
-			origin_pos -= velocity_ * GUNNER_SPEED * dt * 1.5f;
+			origin_pos -= velocity_ * GUNNER_SPEED * speed_scale_factor * dt * 1.5f;
 		}
 		
 		// rotate around a the origin position (via parametric equations)
@@ -147,6 +147,7 @@ namespace game {
 		health = CHASER_INIT_HP;
 		damage = CHASER_INIT_DMG;
 		point_reward = CHASER_POINT_REWARD;
+		child_count = 3;
 		child1 = new ArmObject(glm::vec3(0.55f, 0.0f, 0.0f), geom, shader, base_texture);
 		child2 = new ArmObject(glm::vec3(0.2f, 0.0f, 0.0f), geom, shader, link_texture);
 		child3 = new ArmObject(glm::vec3(0.4f, 0.0f, 0.0f), geom, shader, saw_texture);
@@ -167,8 +168,8 @@ namespace game {
 	/*** Update, moves the chaser using the pursuit method, updates children based on parent ***/
 	void ChaserEnemy::Update(double delta_time) {
 		EnemyGameObject::Update(delta_time);
-		position_.x += velocity_.x * CHASER_SPEED * delta_time;
-		position_.y += velocity_.y * CHASER_SPEED * delta_time;
+		position_.x += velocity_.x * CHASER_SPEED * speed_scale_factor * delta_time;
+		position_.y += velocity_.y * CHASER_SPEED * speed_scale_factor * delta_time;
 
 		// calculate direction facing
 		float angle = atan2(velocity_.y, velocity_.x);
@@ -222,8 +223,8 @@ namespace game {
 	/*** Update, moves the kamikaze using the pursuit method ***/
 	void KamikazeEnemy::Update(double delta_time) {
 		EnemyGameObject::Update(delta_time);
-		position_.x += velocity_.x * KAMIKAZE_SPEED * delta_time;
-		position_.y += velocity_.y * KAMIKAZE_SPEED * delta_time;
+		position_.x += velocity_.x * KAMIKAZE_SPEED * speed_scale_factor * delta_time;
+		position_.y += velocity_.y * KAMIKAZE_SPEED * speed_scale_factor * delta_time;
 	}
 
 
