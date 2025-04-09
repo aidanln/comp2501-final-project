@@ -188,7 +188,7 @@ namespace game {
         // Audio Variables, should be callable 
         audio_manager::AudioManager am;
         int bg_music, game_start_sfx, boom_sfx, game_over_sfx, collect_sfx, power_up_ambience,
-            player_hit_sfx, player_shoot_sfx, enemy_hit_sfx, enemy_shoot_sfx, wave_complete_sfx;
+            player_hit_sfx, player_shoot_sfx, enemy_hit_sfx, enemy_shoot_sfx, wave_complete_sfx, smg_shoot_sfx,rifle_shoot_sfx, sniper_shoot_sfx;
 
         // Camera Attributes, needed for smooth movement
         glm::vec3 camera_pos;
