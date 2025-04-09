@@ -17,7 +17,7 @@ namespace game {
     class TextGameObject : public GameObject {
 
         public:
-            TextGameObject(const glm::vec3 &position, Geometry *geom, Shader *shader, GLuint texture);
+            TextGameObject(const glm::vec3& position, Geometry* geom, Shader* shader, GLuint texture);
 
             // Text Getter and Setter
             inline std::string GetText(void) const { return text_; }
